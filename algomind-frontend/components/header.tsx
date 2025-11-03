@@ -4,31 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Github } from "lucide-react";
-
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { useTheme } from "next-themes";
 export function SiteHeader() {
-  const [isDark, setIsDark] = useState(true);
-
-  useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark");
-    setIsDark(isDarkMode);
-  }, []);
-
+  const { theme, setTheme } = useTheme();
   const toggleTheme = () => {
-    const html = document.documentElement;
-    html.classList.toggle("dark");
-    setIsDark(!isDark);
+    if (theme === "light") setTheme("dark");
+    else setTheme("light");
   };
-
   return (
     <header className="sticky top-0 z-40">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link
-          href="/"
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-        >
-          <div className="h-6 w-6 rounded-md bg-primary" aria-hidden />
-          <span className="text-sm font-semibold tracking-wide">AlgoMind</span>
-        </Link>
+        <SidebarTrigger />
 
         <div className="flex items-center gap-3">
           <Button
@@ -38,7 +26,7 @@ export function SiteHeader() {
             aria-label="Toggle dark mode"
             className="h-9 w-9"
           >
-            {isDark ? (
+            {theme === "Dark" ? (
               <Sun className="h-4 w-4" />
             ) : (
               <Moon className="h-4 w-4" />
@@ -57,6 +45,7 @@ export function SiteHeader() {
           </Button>
         </div>
       </div>
+      <Separator />
     </header>
   );
 }
