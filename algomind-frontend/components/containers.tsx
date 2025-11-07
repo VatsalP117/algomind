@@ -36,3 +36,19 @@ export function PageFlexContainer({
     </PageContainer>
   );
 }
+
+export function SectionFlexContainer({
+  className = "",
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <SectionContainer
+      className={cn("flex flex-row flex-wrap gap-12", className)}
+    >
+      {children}
+    </SectionContainer>
+  );
+}

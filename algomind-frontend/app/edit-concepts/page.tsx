@@ -1,5 +1,5 @@
 import { PageContainer, SectionContainer } from "@/components/containers";
-import { TypographyH1 } from "@/components/typography/h1";
+import { TypographyH1 } from "@/components/typography";
 export default function EditConceptsPage() {
   return (
     <PageContainer>

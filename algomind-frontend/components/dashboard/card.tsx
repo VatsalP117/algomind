@@ -19,7 +19,7 @@ import {
 
 export default function SectionCard() {
   return (
-    <Card className="w-sm font-geist-sans">
+    <Card className="flex-1 basis-80 min-w-sm font-geist-sans">
       <CardHeader>
         <CardTitle>
           <TypographyH3>Due Today</TypographyH3>
