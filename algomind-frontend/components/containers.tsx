@@ -7,7 +7,7 @@ export function PageContainer({
   children: React.ReactNode;
 }) {
   return (
-    <main className={cn("mx-auto w-full max-w-7xl px-4 py-4", className)}>
+    <main className={cn("mx-auto w-full max-w-7xl px-8 py-4", className)}>
       {children}
     </main>
   );
@@ -20,9 +20,7 @@ export function SectionContainer({
   className?: string;
   children: React.ReactNode;
 }) {
-  return (
-    <section className={cn("w-full px-4 py-2", className)}>{children}</section>
-  );
+  return <section className={cn("w-full py-2", className)}>{children}</section>;
 }
 
 export function PageFlexContainer({
