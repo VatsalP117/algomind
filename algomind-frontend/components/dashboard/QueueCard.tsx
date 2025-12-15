@@ -1,27 +1,23 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   TypographyH3,
-  TypographyH4,
   TypographyLarge,
   TypographySmall,
-} from "../typography";
-import { Progress } from "../ui/progress";
+} from "@/components/typography";
+import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 
 export function QueueCard() {
   return (
-    <Card className="w-full max-w-sm gap-6">
+    <Card className="w-full max-w-lg gap-6">
       <CardHeader>
         <CardTitle>
           <TypographyH3>Today's Queue</TypographyH3>

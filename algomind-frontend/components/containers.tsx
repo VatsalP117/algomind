@@ -31,7 +31,7 @@ export function PageFlexContainer({
   children: React.ReactNode;
 }) {
   return (
-    <PageContainer className={cn("flex flex-col gap-4", className)}>
+    <PageContainer className={cn("flex flex-col gap-8", className)}>
       {children}
     </PageContainer>
   );
