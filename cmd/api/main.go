@@ -39,6 +39,7 @@ func main() {
 	protected.GET("/concepts", conceptHandler.ListConcepts)
 	protected.POST("/items", itemHandler.CreateItem)
 	protected.GET("/reviews/queue", reviewHandler.GetQueue)
+	protected.POST("/reviews/:id/log", reviewHandler.LogReview)
 	if err := srv.Start(); err != nil {
 		log.Fatal(err)
 	}
