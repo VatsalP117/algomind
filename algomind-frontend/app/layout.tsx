@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { ThemeProvider } from '@/components/theme-provider'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { ThemeProvider } from '@/components/shared/theme-provider'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
-import { SiteHeader } from '@/components/header'
-import { AppSidebar } from '@/components/app-sidebar'
 import { Toaster } from 'react-hot-toast'
 
 const geistSans = Geist({
@@ -41,13 +39,7 @@ export default function RootLayout({
                         disableTransitionOnChange
                     >
                         <Toaster />
-                        <SidebarProvider>
-                            <AppSidebar />
-                            <SidebarInset>
-                                <SiteHeader />
-                                {children}
-                            </SidebarInset>
-                        </SidebarProvider>
+                        <SidebarProvider>{children}</SidebarProvider>
                     </ThemeProvider>
                 </body>
             </html>
