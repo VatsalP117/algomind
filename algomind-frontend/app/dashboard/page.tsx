@@ -7,7 +7,7 @@ import { ChartLineLinear } from '@/components/dashboard/LineChart'
 import { ChartRadarDefault } from '@/components/dashboard/RadarChart'
 export default function DashboardPage() {
     return (
-        <PageFlexContainer className="justify-start items-start">
+        <PageFlexContainer>
             <TypographyH1>Dashboard</TypographyH1>
             <div className="w-full flex flex-row flex-wrap gap-12">
                 <QueueCard />

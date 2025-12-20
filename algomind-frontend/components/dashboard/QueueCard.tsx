@@ -34,7 +34,7 @@ export function QueueCard() {
                 <Progress value={25} />
             </CardContent>
             <CardFooter>
-                <Link href="/review" passHref>
+                <Link href="/dashboard/review" passHref>
                     <Button>Start Review</Button>
                 </Link>
             </CardFooter>
