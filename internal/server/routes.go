@@ -12,7 +12,7 @@ func RegisterRoutes (e *echo.Echo, db *database.Service) {
 	
 	// initialize handlers
 	userHandler := handlers.NewUserHandler(db)
-	itemHandler := handlers.NewItemHandler(db)
+	problemHandler := handlers.NewProblemHandler(db)
 	reviewHandler := handlers.NewReviewHandler(db)
 	conceptHandler := handlers.NewConceptHandler(db)
 
@@ -22,7 +22,7 @@ func RegisterRoutes (e *echo.Echo, db *database.Service) {
 	api.GET("/profile", userHandler.GetProfile)
 	api.GET("/concepts", conceptHandler.ListConcepts)
 
-	api.POST("/items", itemHandler.CreateItem)
+	api.POST("/problems", problemHandler.CreateProblem)
 	api.GET("/reviews/queue", reviewHandler.GetQueue)
-	api.POST("/reviews/:id/log", reviewHandler.LogReview)
+	api.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
 } 

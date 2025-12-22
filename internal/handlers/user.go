@@ -16,49 +16,44 @@ func NewUserHandler(db *database.Service) *UserHandler {
 	return &UserHandler{DB: db}
 }
 
-// GetProfile finds the user in the DB. If they don't exist, it creates them.
+// GetProfile ensures the authenticated user exists in our DB.
+// If they don't exist, it creates them.
 func (h *UserHandler) GetProfile(c echo.Context) error {
-	// 1. Get the authenticated Clerk ID from the context
-	clerkID := c.Get("user_id").(string)
+	// 1️⃣ Get Clerk user ID from auth middleware
+	userID := c.Get("user_id").(string)
+	ctx := c.Request().Context()
 
-	// 2. Try to find the user in OUR database
-	// We use a struct to hold the result (using sqlx tags if you added them, or manual scanning)
-	var user struct {
-		ID      int64  `db:"id"`
-		ClerkID string `db:"clerk_id"`
-		Email   string `db:"email"`
-	}
+	// 2️⃣ Try to find the user
+	var existingID string
+	query := `SELECT id FROM users WHERE id = $1`
 
-	// 'Get' is a helper from sqlx that selects a single row
-	query := `SELECT id, clerk_id, email FROM users WHERE clerk_id = $1`
-	err := h.DB.Db.Get(&user, query, clerkID)
+	err := h.DB.Db.GetContext(ctx, &existingID, query, userID)
 
-	// 3. Handle the result
-	if err == sql.ErrNoRows {
-		// --- CASE A: User does not exist (First Login) ---
-		// We insert them now.
-		// Note: In a real app, you might want to fetch the real email from Clerk's API.
-		// For now, we use a placeholder so the constraint doesn't fail.
-		defaultEmail := "user_" + clerkID + "@placeholder.com"
+	switch {
+	case err == sql.ErrNoRows:
+		// 3️⃣ First login → create user
+		insertQuery := `
+			INSERT INTO users (id, created_at)
+			VALUES ($1, NOW())
+		`
 
-		insertQuery := `INSERT INTO users (clerk_id, email) VALUES ($1, $2) RETURNING id, clerk_id, email`
-		
-		// We use QueryRow because we want the returned ID
-		err = h.DB.Db.QueryRowx(insertQuery, clerkID, defaultEmail).StructScan(&user)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to register user: " + err.Error()})
+		if _, err := h.DB.Db.ExecContext(ctx, insertQuery, userID); err != nil {
+			return echo.NewHTTPError(
+				http.StatusInternalServerError,
+				"failed to create user",
+			)
 		}
-		
-	} else if err != nil {
-		// --- CASE B: Real Database Error ---
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database error"})
+
+	case err != nil:
+		// 4️⃣ Real DB error
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to fetch user",
+		)
 	}
 
-	// 4. Return the Profile (Case C: User existed, or was just created)
+	// 5️⃣ Return minimal profile
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"message":     "Profile fetched successfully",
-		"internal_id": user.ID,      // This is what we need for foreign keys!
-		"clerk_id":    user.ClerkID,
-		"email":       user.Email,
+		"user_id": userID,
 	})
 }

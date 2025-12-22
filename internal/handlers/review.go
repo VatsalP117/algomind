@@ -4,10 +4,13 @@ import (
 	"net/http"
 
 	"github.com/VatsalP117/algomind-backend/internal/database"
-	"github.com/VatsalP117/algomind-backend/internal/models"
+	"github.com/VatsalP117/algomind-backend/internal/dto"
 	"github.com/VatsalP117/algomind-backend/internal/srs"
 	"github.com/labstack/echo/v4"
 )
+type LogReviewRequest struct {
+	Rating string `json:"rating" validate:"required,oneof=AGAIN GOOD EASY"`
+}
 
 type ReviewHandler struct {
 	DB *database.Service
@@ -17,139 +20,196 @@ func NewReviewHandler(db *database.Service) *ReviewHandler {
 	return &ReviewHandler{DB: db}
 }
 
-// GetQueue returns all items due for review (NextReviewAt <= NOW)
 func (h *ReviewHandler) GetQueue(c echo.Context) error {
-	clerkID := c.Get("user_id").(string)
+	userID := c.Get("user_id").(string)
+	ctx := c.Request().Context()
 
-	// We need the internal ID for the query
-	var userID int64
-	err := h.DB.Db.GetContext(c.Request().Context(), &userID, "SELECT id FROM users WHERE clerk_id=$1", clerkID)
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "User not found"})
-	}
-
-	// The Query:
-	// 1. Selects everything from user_items
-	// 2. Joins 'concepts' to get the Title/Content (Aliased as concept_*)
-	// 3. Filters by User AND Due Date
 	query := `
-		SELECT 
-			ui.*,
-			c.title AS concept_title,
-			c.content AS concept_content
-		FROM user_items ui
-		LEFT JOIN concepts c ON ui.concept_id = c.id
-		WHERE ui.user_id = $1 
-		  AND ui.next_review_at <= NOW()
-		ORDER BY ui.next_review_at ASC
+		SELECT
+			rs.entity_type,
+			rs.entity_id,
+			rs.next_review_at,
+
+			-- Problem fields
+			p.title,
+			p.summary,
+			p.answer,
+			p.hints,
+			p.difficulty,
+
+			-- Concept fields
+			con.title   AS title,
+			con.content AS content
+		FROM review_states rs
+		LEFT JOIN problems p
+			ON rs.entity_type = 'problem'
+		   AND rs.entity_id = p.id
+		LEFT JOIN concepts con
+			ON rs.entity_type = 'concept'
+		   AND rs.entity_id = con.id
+		WHERE rs.user_id = $1
+		  AND rs.next_review_at <= NOW()
+		ORDER BY rs.next_review_at ASC
 		LIMIT 50
 	`
 
-	var queue []models.ReviewQueueItem
-	err = h.DB.Db.SelectContext(c.Request().Context(), &queue, query, userID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch queue: " + err.Error()})
+	var queue []dto.ReviewQueueItem
+
+	if err := h.DB.Db.SelectContext(ctx, &queue, query, userID); err != nil {
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to fetch review queue",
+		)
 	}
 
-	// Handle empty result
 	if queue == nil {
-		queue = []models.ReviewQueueItem{}
+		queue = []dto.ReviewQueueItem{}
 	}
 
 	return c.JSON(http.StatusOK, queue)
 }
 
-type LogReviewRequest struct {
-	Rating string `json:"rating" validate:"required,oneof=AGAIN HARD GOOD EASY"`
-}
 
 func (h *ReviewHandler) LogReview(c echo.Context) error {
-	// 1. Parse Request
-	itemID := c.Param("id")
+	entityType := c.Param("entity_type") // "problem" | "concept"
+	entityID := c.Param("entity_id")
+	userID := c.Get("user_id").(string)
+
 	var req LogReviewRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid JSON body")
+	}
+	if err := c.Validate(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	ctx := c.Request().Context()
 
-	// 2. Fetch the Current Item State
-	var item models.UserItem
-	// We need Interval, Ease, Streak, ConceptID, and Type to make decisions
-	query := `SELECT * FROM user_items WHERE id = $1`
-	err := h.DB.Db.GetContext(ctx, &item, query, itemID)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "Item not found"})
+	// 1️⃣ Fetch current SRS state
+	var current struct {
+		IntervalDays int     `db:"interval_days"`
+		EaseFactor   float64 `db:"ease_factor"`
+		Streak       int     `db:"streak"`
 	}
 
-	// 3. Calculate New Schedule (Using SRS Package)
+	stateQuery := `
+		SELECT interval_days, ease_factor, streak
+		FROM review_states
+		WHERE user_id = $1
+		  AND entity_type = $2
+		  AND entity_id = $3
+	`
+
+	if err := h.DB.Db.GetContext(
+		ctx,
+		&current,
+		stateQuery,
+		userID,
+		entityType,
+		entityID,
+	); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "review state not found")
+	}
+
+	// 2️⃣ Calculate new schedule using existing SRS algorithm
 	result := srs.CalculateReview(
 		req.Rating,
-		item.IntervalDays,
-		item.EaseFactor,
-		item.Streak,
+		current.IntervalDays,
+		current.EaseFactor,
+		current.Streak,
 	)
 
-	// 4. Start Database Transaction
-	// We use a transaction because we might update multiple tables (Item + Logs + Concept Reset)
+	// 3️⃣ Start transaction
 	tx, err := h.DB.Db.Beginx()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to start transaction"})
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to start transaction",
+		)
 	}
-	// Safety: Rollback if function panics or returns error before Commit
 	defer tx.Rollback()
 
-	// 5. Update the Reviewed Item
-	updateQuery := `
-		UPDATE user_items 
-		SET next_review_at = $1, interval_days = $2, ease_factor = $3, streak = $4 
-		WHERE id = $5
+	// 4️⃣ Update review state
+	updateStateQuery := `
+		UPDATE review_states
+		SET next_review_at = $1,
+		    interval_days = $2,
+		    ease_factor = $3,
+		    streak = $4
+		WHERE user_id = $5
+		  AND entity_type = $6
+		  AND entity_id = $7
 	`
-	_, err = tx.ExecContext(ctx, updateQuery, 
-		result.NextReviewAt, 
-		result.IntervalDays, 
-		result.EaseFactor, 
-		result.Streak, 
-		itemID,
-	)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update item"})
+
+	if _, err := tx.ExecContext(
+		ctx,
+		updateStateQuery,
+		result.NextReviewAt,
+		result.IntervalDays,
+		result.EaseFactor,
+		result.Streak,
+		userID,
+		entityType,
+		entityID,
+	); err != nil {
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to update review state",
+		)
 	}
 
-	// 6. Insert Review Log (For History/Heatmap)
-	logQuery := `INSERT INTO review_logs (user_item_id, rating, reviewed_at) VALUES ($1, $2, NOW())`
-	_, err = tx.ExecContext(ctx, logQuery, itemID, req.Rating)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save log"})
+	// 5️⃣ Insert review log
+	logQuery := `
+		INSERT INTO review_logs (
+			user_id,
+			entity_type,
+			entity_id,
+			rating,
+			reviewed_at
+		) VALUES ($1, $2, $3, $4, NOW())
+	`
+
+	if _, err := tx.ExecContext(
+		ctx,
+		logQuery,
+		userID,
+		entityType,
+		entityID,
+		req.Rating,
+	); err != nil {
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to log review",
+		)
 	}
 
-	// 7. THE LOGIC: Cascading Reset
-	// If User FAILED ("AGAIN") a PROBLEM, reset the parent CONCEPT too.
-	if item.ItemType == "PROBLEM" && req.Rating == "AGAIN" && item.ConceptID != nil {
-		
-		// Logic: Find the 'CONCEPT' item for this user with the same concept_id
-		resetQuery := `
-			UPDATE user_items 
-			SET next_review_at = NOW(), interval_days = 0 
-			WHERE user_id = $1 
-			  AND concept_id = $2 
-			  AND item_type = 'CONCEPT'
+	// 6️⃣ Cascading reset: fail PROBLEM → reset parent CONCEPT
+	if entityType == "problem" && req.Rating == "AGAIN" {
+		resetConceptQuery := `
+			UPDATE review_states
+			SET next_review_at = NOW(),
+			    interval_days = 0,
+			    streak = 0
+			WHERE user_id = $1
+			  AND entity_type = 'concept'
+			  AND entity_id = (
+				  SELECT concept_id FROM problems WHERE id = $2
+			  )
 		`
-		
-		_, err = tx.ExecContext(ctx, resetQuery, item.UserID, *item.ConceptID)
-		if err != nil {
-			// Optional: Log this error, but don't fail the whole request
-			// fmt.Printf("Failed to reset concept: %v\n", err)
-		}
+		_, _ = tx.ExecContext(ctx, resetConceptQuery, userID, entityID)
 	}
 
-	// 8. Commit Transaction
+	// 7️⃣ Commit
 	if err := tx.Commit(); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to commit transaction"})
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to commit transaction",
+		)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"message": "Review logged",
-		"next_review": result.NextReviewAt, // Return this so frontend can animate/update UI
+		"message":     "review logged",
+		"next_review": result.NextReviewAt,
 	})
 }
+
