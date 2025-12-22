@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS review_logs;
+DROP TABLE IF EXISTS review_states;
+DROP TABLE IF EXISTS problems;
+DROP TABLE IF EXISTS concepts;
+DROP TABLE IF EXISTS users;
