@@ -17,21 +17,27 @@ type Concept struct {
 
 
 type UserItem struct {
-	ID           int64     `json:"id"             db:"id"`
-	UserID       int64     `json:"user_id"        db:"user_id"`
-	ItemType     string    `json:"item_type"      db:"item_type"`
-	ConceptID    *int64    `json:"concept_id"     db:"concept_id"`
-	ProblemTitle string    `json:"problem_title"  db:"problem_title"`
-	ProblemLink  string    `json:"problem_link"   db:"problem_link"`
-	
-	// SRS State
-	NextReviewAt time.Time `json:"next_review_at" db:"next_review_at"`
-	IntervalDays int       `json:"interval_days"  db:"interval_days"`
-	EaseFactor   float64   `json:"ease_factor"    db:"ease_factor"`
-	Streak       int       `json:"streak"         db:"streak"`
-	
-	// Crucial: SELECT * returns created_at, so we must map it!
-	CreatedAt    time.Time `json:"created_at"     db:"created_at"` 
+    ID           int64     `json:"id"             db:"id"`
+    UserID       int64     `json:"user_id"        db:"user_id"`
+    ItemType     string    `json:"item_type"      db:"item_type"`
+    ConceptID    *int64    `json:"concept_id"     db:"concept_id"`
+    ProblemTitle string    `json:"problem_title"  db:"problem_title"`
+    ProblemLink  string    `json:"problem_link"   db:"problem_link"`
+    
+    // --- NEW FIELDS (Must match DB columns) ---
+    Difficulty   string    `json:"difficulty"     db:"difficulty"`
+    Summary      string    `json:"summary"        db:"summary"`
+    Description  string    `json:"description"    db:"description"` // Using string is fine even if DB is TEXT
+    Answer       string    `json:"answer"         db:"answer"`
+    Hints        string    `json:"hints"          db:"hints"`
+
+    // SRS State
+    NextReviewAt time.Time `json:"next_review_at" db:"next_review_at"`
+    IntervalDays int       `json:"interval_days"  db:"interval_days"`
+    EaseFactor   float64   `json:"ease_factor"    db:"ease_factor"`
+    Streak       int       `json:"streak"         db:"streak"`
+    
+    CreatedAt    time.Time `json:"created_at"     db:"created_at"` 
 }
 
 // ReviewLog: A history entry for the heatmap
@@ -42,14 +48,22 @@ type ReviewLog struct {
 	ReviewedAt time.Time `json:"reviewed_at"`
 }
 
-// Incoming JSON for creating a new item
+// CreateItemRequest defines the incoming JSON payload
 type CreateItemRequest struct {
-	Type         string `json:"type" validate:"required,oneof=PROBLEM CONCEPT"` // Validator ensures it's one of these two
-	ConceptID    *int64 `json:"concept_id"` // Nullable (if it's a root concept)
-	ProblemTitle string `json:"problem_title"`
-	ProblemLink  string `json:"problem_link"`
-}
+	ItemType  string `json:"item_type" validate:"required,oneof=PROBLEM CONCEPT"`
+	ConceptID int    `json:"concept_id" validate:"required"` // Mandatory for Problems
 
+	// Mapped Fields
+	ProblemTitle string `json:"problem_title" validate:"required"` // Maps to TS 'title'
+	ProblemLink  string `json:"problem_link"`                      // Maps to TS 'problemLink'
+	
+	// New Content Fields
+	Difficulty   string `json:"difficulty" validate:"required,oneof=EASY MEDIUM HARD"`
+	Summary      string `json:"summary" validate:"required"`
+	Description  string `json:"description"` // Optional
+	Answer       string `json:"answer" validate:"required"`
+	Hints        string `json:"hints"`       // Optional
+}
 // ReviewQueueItem: A combined view for the frontend "Flashcard"
 type ReviewQueueItem struct {
 	UserItem // Embeds all the tracking fields (ID, NextReviewAt, etc.)
