@@ -5,6 +5,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
+import Providers from "@/components/providers";
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -28,21 +29,23 @@ export default function RootLayout({
 }>) {
     return (
         <ClerkProvider>
-            <html lang="en" suppressHydrationWarning>
-                <body
-                    className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-                >
-                    <ThemeProvider
-                        attribute="class"
-                        defaultTheme="system"
-                        enableSystem
-                        disableTransitionOnChange
+            <Providers>
+                <html lang="en" suppressHydrationWarning>
+                    <body
+                        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
                     >
-                        <Toaster />
-                        <SidebarProvider>{children}</SidebarProvider>
-                    </ThemeProvider>
-                </body>
-            </html>
+                        <ThemeProvider
+                            attribute="class"
+                            defaultTheme="system"
+                            enableSystem
+                            disableTransitionOnChange
+                        >
+                            <Toaster />
+                            <SidebarProvider>{children}</SidebarProvider>
+                        </ThemeProvider>
+                    </body>
+                </html>
+            </Providers>
         </ClerkProvider>
     )
 }

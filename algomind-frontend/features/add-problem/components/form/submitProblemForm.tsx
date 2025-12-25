@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { useCreateItem } from "@/features/add-problem/api/useCreateItem"
 
 import { useForm } from "react-hook-form"
 
@@ -37,8 +38,9 @@ export default function SubmitProblemForm() {
     const form = useForm<FormFields>();
     const { register, handleSubmit, formState } = form;
     const { errors, isSubmitting } = formState;
+    const { mutateAsync } = useCreateItem();
     const onSubmit = (data: FormFields) => {
-        console.log(data);
+        mutateAsync({ ...data, conceptId: 1 });
     }
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
