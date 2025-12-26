@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
+import { toast } from 'react-hot-toast'
 
 export type CreateItemInput = {
     title: string
@@ -14,10 +15,9 @@ export type CreateItemInput = {
 }
 
 type BackendPayload = {
-    item_type: 'PROBLEM' | 'CONCEPT'
     concept_id: number | null
-    problem_title: string
-    problem_link: string
+    title: string
+    link: string
     difficulty: string
     summary: string
     description: string
@@ -32,13 +32,10 @@ export const useCreateItem = () => {
     return useMutation({
         mutationFn: async (data: CreateItemInput) => {
             const payload: BackendPayload = {
-                item_type: 'PROBLEM', // We are adding a problem
-                concept_id: data.conceptId || null, // Ensure it's a number
-
-                problem_title: data.title,
-                problem_link: data.problemLink || '', // Handle potential undefined
-
-                difficulty: data.difficulty,
+                concept_id: data.conceptId, // Default to 0 if null, as Go int64 is non-nullable
+                title: data.title,
+                link: data.problemLink || '',
+                difficulty: 'EASY',
                 summary: data.summary,
                 description: data.description || '',
                 answer: data.answer,
@@ -46,7 +43,7 @@ export const useCreateItem = () => {
             }
 
             // 4. Send Request
-            const res = await api.post('/items', payload)
+            const res = await api.post('/problems', payload)
             return res.data
         },
 
@@ -54,14 +51,12 @@ export const useCreateItem = () => {
             // 5. Cleanup & Redirect
             // Invalidate the library list so the new item appears immediately
             queryClient.invalidateQueries({ queryKey: ['items'] })
-
-            // Redirect to the Dashboard or Library page
-            router.push('/dashboard')
+            toast.success('Problem added successfully')
         },
 
         onError: (error) => {
             console.error('Failed to add problem:', error)
-            // Optional: Add toast notification here
+            toast.error('Failed to add problem')
         },
     })
 }

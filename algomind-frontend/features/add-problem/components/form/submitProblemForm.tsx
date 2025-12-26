@@ -10,16 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { useCreateItem } from "@/features/add-problem/api/useCreateItem"
 
-import { useForm } from "react-hook-form"
-
-const mockConcepts = [
-    { id: 1, title: "Binary Search" },
-    { id: 2, title: "Two Pointers" },
-    { id: 3, title: "Sliding Window" },
-    { id: 4, title: "Dynamic Programming" },
-    { id: 5, title: "Backtracking" },
-]
-
+import { useForm, Controller } from "react-hook-form"
+import { useConcepts } from "@/features/edit-concepts/api/useConcepts"
 
 
 type FormFields = {
@@ -36,11 +28,15 @@ export default function SubmitProblemForm() {
 
 
     const form = useForm<FormFields>();
+    const { data: concepts } = useConcepts()
     const { register, handleSubmit, formState } = form;
     const { errors, isSubmitting } = formState;
     const { mutateAsync } = useCreateItem();
     const onSubmit = (data: FormFields) => {
-        mutateAsync({ ...data, conceptId: 1 });
+        console.log(data.concept)
+        console.log(concepts)
+        const conceptId = data.concept && data.concept !== "none" ? parseInt(data.concept) : null
+        mutateAsync({ ...data, conceptId: conceptId, difficulty: 'EASY' });
     }
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -100,21 +96,27 @@ export default function SubmitProblemForm() {
 
                     <div className="space-y-2">
                         <Label htmlFor="conceptId">Associated Concept (Optional)</Label>
-                        <Select
-                            {...register("concept")}
-                        >
-                            <SelectTrigger id="conceptId">
-                                <SelectValue placeholder="Select a concept to link this problem" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                {mockConcepts.map((concept) => (
-                                    <SelectItem key={concept.id} value={concept.id.toString()}>
-                                        {concept.title}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Controller
+                            control={form.control}
+                            name="concept"
+                            render={({ field }) => (
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <SelectTrigger id="conceptId">
+                                        <SelectValue placeholder="Select a concept to link this problem" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {concepts?.map((concept) => (
+                                            <SelectItem key={concept.id} value={concept.id.toString()}>
+                                                {concept.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
                         <p className="text-xs text-muted-foreground">
                             Link this problem to a concept for spaced repetition grouping
                         </p>
