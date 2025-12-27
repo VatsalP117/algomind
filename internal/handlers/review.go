@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/VatsalP117/algomind-backend/internal/database"
@@ -8,8 +9,9 @@ import (
 	"github.com/VatsalP117/algomind-backend/internal/srs"
 	"github.com/labstack/echo/v4"
 )
+
 type LogReviewRequest struct {
-	Rating string `json:"rating" validate:"required,oneof=AGAIN GOOD EASY"`
+	Rating string `json:"rating" validate:"required,oneof=AGAIN GOOD EASY HARD"`
 }
 
 type ReviewHandler struct {
@@ -68,7 +70,6 @@ func (h *ReviewHandler) GetQueue(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, queue)
 }
-
 
 func (h *ReviewHandler) LogReview(c echo.Context) error {
 	entityType := c.Param("entity_type") // "problem" | "concept"
@@ -177,6 +178,7 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		entityID,
 		req.Rating,
 	); err != nil {
+		fmt.Println(err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to log review",
@@ -212,4 +214,3 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		"next_review": result.NextReviewAt,
 	})
 }
-
