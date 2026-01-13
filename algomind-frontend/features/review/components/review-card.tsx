@@ -1,104 +1,144 @@
 "use client"
-
 import { useEffect, useState } from "react"
+import { useReviewStore, ReviewProblem } from "../store/useReviewStore"
+import { useLogReview } from "../api/useReviewLog" // <--- Import the hook
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { Eye, Lightbulb, Loader2 } from "lucide-react"
 
-type Rating = 1 | 2 | 3 | 4
-
-export type ReviewProblem = {
-    entity_id: number
-    entity_type: string
-    title: string
-    summary: string
-    difficulty: string
-    answer: string
-    hints: string
-    next_review_at: string
+// Helper for color coding difficulty
+const difficultyColor = (diff: string) => {
+    switch (diff) {
+        case "EASY": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800";
+        case "MEDIUM": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+        case "HARD": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
+        default: return "bg-secondary text-secondary-foreground";
+    }
 }
 
-export default function ReviewCard({ problem }: { problem?: ReviewProblem }) {
+export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
     const [revealed, setRevealed] = useState(false)
-    const [rating, setRating] = useState<Rating | null>(null)
+    const [showHint, setShowHint] = useState(false)
 
-    // Reset state when problem changes
+    // 1. Get Actions
+    const nextCard = useReviewStore(state => state.nextCard)
+    const { mutate: logReview, isPending } = useLogReview()
+
+    // 2. Handle Rating Submission
+    const handleRate = (rating: 1 | 2 | 3 | 4) => {
+        logReview(
+            { entityId: problem.entity_id, rating },
+            {
+                onSuccess: () => {
+                    // Only move to next card if server accepted the log
+                    nextCard();
+                },
+                onError: () => {
+                    alert("Failed to save review. Please try again.");
+                }
+            }
+        );
+    }
+
+    // Reset local state when problem changes
     useEffect(() => {
         setRevealed(false)
-        setRating(null)
-    }, [problem?.entity_id])
+        setShowHint(false)
+    }, [problem.entity_id])
 
+    // Keyboard Shortcuts
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            const map: Record<string, Rating> = { "1": 1, "2": 2, "3": 3, "4": 4 }
-            if (e.key in map) setRating(map[e.key] as Rating)
-            if (e.key.toLowerCase() === " ") setRevealed((v) => !v)
+            if (isPending) return; // Disable keys while saving
+
+            if (e.code === "Space") {
+                e.preventDefault();
+                if (!revealed) setRevealed(true);
+            }
+
+            if (revealed) {
+                if (e.key === "1") handleRate(1);
+                if (e.key === "2") handleRate(2);
+                if (e.key === "3") handleRate(3);
+                if (e.key === "4") handleRate(4);
+            }
         }
         window.addEventListener("keydown", onKey)
         return () => window.removeEventListener("keydown", onKey)
-    }, [])
-
-    if (!problem) return <div>Loading...</div>
+    }, [revealed, isPending, handleRate]) // Added dependencies
 
     return (
-        <Card className="mx-auto w-full max-w-2xl border-border bg-card">
+        <Card className="w-full shadow-lg border-border bg-card">
+            {/* Header ... (Same as before) ... */}
             <CardHeader>
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-balance">{problem.title}</CardTitle>
-                    <span className="text-xs font-mono px-2 py-1 rounded-sm bg-secondary text-secondary-foreground">
-                        {problem.difficulty}
-                    </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                    {problem.summary}
-                </p>
+                <CardTitle>{problem.title}</CardTitle>
+                <p className="text-muted-foreground">{problem.summary}</p>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div
-                    className={cn(
-                        "rounded-md border border-border bg-secondary/60 p-4 font-mono text-sm leading-6 whitespace-pre-wrap",
-                        revealed ? "opacity-100" : "opacity-50 blur-[2px]",
-                    )}
-                >
-                    {problem.answer}
-                </div>
-                <Button onClick={() => setRevealed((v) => !v)} aria-keyshortcuts="Space">
-                    {revealed ? "Hide Answer" : "Reveal Answer"} <span className="sr-only">(Space)</span>
-                </Button>
+
+            <CardContent className="min-h-[200px] flex flex-col justify-center relative">
+                {!revealed ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Button size="lg" onClick={() => setRevealed(true)}>
+                            <Eye className="w-4 h-4 mr-2" /> Reveal Answer
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="prose dark:prose-invert">
+                        <p className="whitespace-pre-wrap">{problem.answer}</p>
+                    </div>
+                )}
             </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-                <div className="flex w-full gap-2">
-                    <RatingButton label="Again" hint="1" active={rating === 1} onClick={() => setRating(1)} interval="in 10m" />
-                    <RatingButton label="Hard" hint="2" active={rating === 2} onClick={() => setRating(2)} interval="in 8h" />
-                    <RatingButton label="Good" hint="3" active={rating === 3} onClick={() => setRating(3)} interval="in 2d" />
-                    <RatingButton label="Easy" hint="4" active={rating === 4} onClick={() => setRating(4)} interval="in 5d" />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                    Hotkeys: <span className="kbd">1</span> <span className="kbd">2</span> <span className="kbd">3</span>{" "}
-                    <span className="kbd">4</span> · <span className="kbd">Space</span> reveal
-                </p>
+
+            <CardFooter className={cn(
+                "border-t p-6 transition-opacity duration-200",
+                revealed ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}>
+                {isPending ? (
+                    <div className="w-full flex justify-center py-4 text-muted-foreground">
+                        <Loader2 className="animate-spin mr-2" /> Saving...
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-4 gap-3 w-full">
+                        <RatingButton label="Again" hint="1" color="destructive" onClick={() => handleRate(1)} sub="< 10m" />
+                        <RatingButton label="Hard" hint="2" color="warning" onClick={() => handleRate(2)} sub="2d" />
+                        <RatingButton label="Good" hint="3" color="success" onClick={() => handleRate(3)} sub="4d" />
+                        <RatingButton label="Easy" hint="4" color="default" onClick={() => handleRate(4)} sub="7d" />
+                    </div>
+                )}
             </CardFooter>
         </Card>
     )
 }
 
+// Sub-component for buttons
 function RatingButton({
-    label,
-    hint,
-    interval,
-    active,
-    onClick,
-}: { label: string; hint: string; interval: string; active?: boolean; onClick: () => void }) {
+    label, hint, sub, color, onClick
+}: {
+    label: string;
+    hint: string;
+    sub: string;
+    color: 'default' | 'destructive' | 'warning' | 'success';
+    onClick: () => void
+}) {
+    // Dynamic color mapping
+    const variantStyles = {
+        default: "hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900/40 dark:hover:text-blue-400 border-blue-200",
+        destructive: "hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-900/40 dark:hover:text-red-400 border-red-200",
+        warning: "hover:bg-orange-100 hover:text-orange-700 dark:hover:bg-orange-900/40 dark:hover:text-orange-400 border-orange-200",
+        success: "hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/40 dark:hover:text-green-400 border-green-200",
+    }
+
     return (
         <Button
-            variant={active ? "default" : "secondary"}
-            className={cn("flex-1 justify-between", active && "bg-primary text-primary-foreground")}
+            variant="outline"
+            className={cn("h-auto flex-col py-3 gap-1 relative transition-all active:scale-95", variantStyles[color])}
             onClick={onClick}
-            aria-pressed={active}
         >
-            <span>{label}</span>
-            <span className="text-xs text-primary-foreground/80">{interval}</span>
-            <span aria-hidden className="kbd">
+            <span className="font-bold text-base">{label}</span>
+            <span className="text-xs font-normal text-muted-foreground">{sub}</span>
+            <span className="absolute top-2 right-2 text-[10px] font-mono opacity-50 border rounded px-1 hidden md:block">
                 {hint}
             </span>
         </Button>

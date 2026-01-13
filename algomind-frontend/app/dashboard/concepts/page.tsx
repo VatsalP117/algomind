@@ -53,7 +53,33 @@ export default function ConceptsListPage() {
                         {/* Markdown Content Section */}
                         <div className="p-6">
                             <div className="prose prose-slate dark:prose-invert max-w-none">
-                                <ReactMarkdown>{concept.content}</ReactMarkdown>
+                                <ReactMarkdown
+                                    components={{
+                                        h2: ({ node, ...props }) => (
+                                            <h2
+                                                className="mt-6 mb-3"
+                                                {...props}
+                                            />
+                                        ),
+                                        h3: ({ node, ...props }) => (
+                                            <h3
+                                                className="mt-4 mb-2"
+                                                {...props}
+                                            />
+                                        ),
+                                        ul: ({ node, ...props }) => (
+                                            <ul
+                                                className="list-disc ml-6 mb-3"
+                                                {...props}
+                                            />
+                                        ),
+                                        p: ({ node, ...props }) => (
+                                            <p className="mb-2" {...props} />
+                                        ),
+                                    }}
+                                >
+                                    {concept.content}
+                                </ReactMarkdown>
                             </div>
                         </div>
                     </article>
