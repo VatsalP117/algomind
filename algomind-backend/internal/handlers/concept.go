@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/VatsalP117/algomind-backend/internal/database"
-	"github.com/VatsalP117/algomind-backend/internal/models"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/models"
 	"github.com/labstack/echo/v4"
 )
 

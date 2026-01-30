@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/VatsalP117/algomind-backend/internal/config"
-	"github.com/VatsalP117/algomind-backend/internal/database"
-	"github.com/VatsalP117/algomind-backend/internal/server"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/server"
 )
 
 func main() {
@@ -18,10 +18,10 @@ func main() {
 	if err := srv.Start(); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}
-	
+
 }
 
-func mustInitDb(dsn string) *database.Service{
+func mustInitDb(dsn string) *database.Service {
 	db, err := database.New(dsn)
 	if err != nil {
 		log.Fatal("Could not connect to database:", err)

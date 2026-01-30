@@ -1,4 +1,4 @@
-module github.com/VatsalP117/algomind-backend
+module github.com/VatsalP117/algomind/algomind-backend
 
 go 1.25.3
 

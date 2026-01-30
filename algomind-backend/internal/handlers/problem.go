@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/VatsalP117/algomind-backend/internal/database"
-	"github.com/VatsalP117/algomind-backend/internal/dto"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/dto"
 	"github.com/labstack/echo/v4"
 )
 

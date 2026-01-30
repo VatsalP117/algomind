@@ -6,7 +6,7 @@ import (
 )
 
 type Service struct {
-	Db *sqlx.DB 
+	Db *sqlx.DB
 }
 
 func New(connectionString string) (*Service, error) {

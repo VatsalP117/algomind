@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/VatsalP117/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/labstack/echo/v4"
 )
 

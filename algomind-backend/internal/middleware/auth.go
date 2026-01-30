@@ -47,7 +47,7 @@ func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 		claims, err := jwt.Verify(c.Request().Context(), &jwt.VerifyParams{
 			Token: token,
 		})
-		
+
 		if err != nil {
 			log.Warn().Err(err).Msg("Invalid token received")
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid Session"})

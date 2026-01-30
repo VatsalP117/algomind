@@ -8,9 +8,9 @@ import (
 )
 
 type Config struct {
-	Port string
+	Port           string
 	ClerkSecretKey string
-	DatabaseURL string
+	DatabaseURL    string
 }
 
 func Load() *Config {
@@ -20,11 +20,10 @@ func Load() *Config {
 	}
 
 	cfg := &Config{
-		Port: getEnv("PORT", "8080"),// Default to 8080 if PORT is not set
-		ClerkSecretKey: getEnv("CLERK_SECRET_KEY",""),
-		DatabaseURL: getEnv("DATABASE_URL",""),
+		Port:           getEnv("PORT", "8080"), // Default to 8080 if PORT is not set
+		ClerkSecretKey: getEnv("CLERK_SECRET_KEY", ""),
+		DatabaseURL:    getEnv("DATABASE_URL", ""),
 	}
-
 
 	if cfg.ClerkSecretKey == "" {
 		log.Fatal("Error: CLERK_SECRET_KEY is required but not set")
@@ -36,7 +35,6 @@ func Load() *Config {
 
 	return cfg
 }
-
 
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {

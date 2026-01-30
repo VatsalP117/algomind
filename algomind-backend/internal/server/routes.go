@@ -3,19 +3,19 @@ package server
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/VatsalP117/algomind-backend/internal/database"
-	"github.com/VatsalP117/algomind-backend/internal/handlers"
-	"github.com/VatsalP117/algomind-backend/internal/middleware"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/handlers"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/middleware"
 )
-func RegisterRoutes (e *echo.Echo, db *database.Service) {
+
+func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	authMiddleware := middleware.New()
-	
+
 	// initialize handlers
 	userHandler := handlers.NewUserHandler(db)
 	problemHandler := handlers.NewProblemHandler(db)
 	reviewHandler := handlers.NewReviewHandler(db)
 	conceptHandler := handlers.NewConceptHandler(db)
-
 
 	internalConceptHandler := handlers.NewInternalConceptHandler(db)
 	internalProblemHandler := handlers.NewInternalProblemHandler(db)
@@ -33,4 +33,4 @@ func RegisterRoutes (e *echo.Echo, db *database.Service) {
 	api.POST("/problems", problemHandler.CreateProblem)
 	api.GET("/reviews/queue", reviewHandler.GetQueue)
 	api.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
-} 
+}

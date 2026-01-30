@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/VatsalP117/algomind-backend/internal/config"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -11,7 +11,7 @@ import (
 )
 
 type Server struct {
-	Echo *echo.Echo
+	Echo   *echo.Echo
 	Config *config.Config
 }
 
@@ -23,7 +23,6 @@ func NewServer(cfg *config.Config) *Server {
 	e.HideBanner = true
 	e.HidePort = true
 
-	
 	// Recover: If your app crashes (panics), this catches it and keeps the server running
 	e.Use(middleware.Recover())
 
@@ -35,23 +34,22 @@ func NewServer(cfg *config.Config) *Server {
 		middleware.CORSConfig{
 			AllowOrigins: []string{"http://localhost:3000"},
 			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	}))
+		}))
 
 	// 3. Define a simple health check route so we can test our server
-	e.GET("/health",func(c echo.Context) error {
-		return c.JSON(http.StatusOK,map[string]string{"status":"OK"})
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "OK"})
 	})
-
 
 	e.Validator = NewValidator()
 
 	return &Server{
-		Echo: e,
+		Echo:   e,
 		Config: cfg,
 	}
 }
 
-func (s *Server) Start() error{
+func (s *Server) Start() error {
 	log.Info().Msgf("Starting server on port %s", s.Config.Port)
 	return s.Echo.Start(":" + s.Config.Port)
 }

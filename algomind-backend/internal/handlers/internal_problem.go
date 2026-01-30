@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/VatsalP117/algomind-backend/internal/database"
-	"github.com/VatsalP117/algomind-backend/internal/models"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/models"
 	"github.com/labstack/echo/v4"
 )
-
 
 type InternalProblemHandler struct {
 	DB *database.Service
@@ -17,7 +16,6 @@ type InternalProblemHandler struct {
 func NewInternalProblemHandler(db *database.Service) *InternalProblemHandler {
 	return &InternalProblemHandler{DB: db}
 }
-
 
 func (h *InternalProblemHandler) GetAllProblems(c echo.Context) error {
 	var problems []models.Problem
