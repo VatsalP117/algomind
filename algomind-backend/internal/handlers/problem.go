@@ -18,7 +18,6 @@ func NewProblemHandler(db *database.Service) *ProblemHandler {
 }
 
 func (h *ProblemHandler) CreateProblem(c echo.Context) error {
-	// 1. Bind + validate request
 	var req dto.CreateProblemRequest
 
 	if err := c.Bind(&req); err != nil {
@@ -29,12 +28,10 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	// 2. Get authenticated user (Clerk ID)
 	userID := c.Get("user_id").(string)
 
 	ctx := c.Request().Context()
 
-	// 3. Insert problem
 	var problemID int64
 
 	insertProblemQuery := `

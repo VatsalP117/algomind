@@ -11,7 +11,6 @@ import (
 func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	authMiddleware := middleware.New()
 
-	// initialize handlers
 	userHandler := handlers.NewUserHandler(db)
 	problemHandler := handlers.NewProblemHandler(db)
 	reviewHandler := handlers.NewReviewHandler(db)
@@ -24,7 +23,6 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	internal.POST("/concepts", internalConceptHandler.CreateConcept)
 	internal.GET("/problems", internalProblemHandler.GetAllProblems)
 
-	// register the routes
 	api := e.Group("/api/v1")
 	api.Use(authMiddleware.RequireAuth)
 	api.GET("/profile", userHandler.GetProfile)

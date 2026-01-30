@@ -2,10 +2,9 @@ package models
 
 import "time"
 
-// ReviewLog = one review event
 type ReviewLog struct {
 	ID     int64  `db:"id" json:"id"`
-	UserID string `db:"user_id" json:"user_id"` // Changed: int64 -> string
+	UserID string `db:"user_id" json:"user_id"`
 
 	EntityType string `db:"entity_type" json:"entity_type"`
 	EntityID   int64  `db:"entity_id" json:"entity_id"`
