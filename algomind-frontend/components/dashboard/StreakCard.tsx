@@ -7,49 +7,101 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
-import { TypographyH3 } from '@/components/shared/typography'
 import { useDashboardMetrics } from '@/features/dashboard'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Flame, Trophy } from 'lucide-react'
+import { Flame, Trophy, Calendar, TrendingUp } from 'lucide-react'
 
 export default function StreakCard() {
     const { data, isLoading, isError } = useDashboardMetrics()
 
     const currentStreak = data?.current_streak ?? 0
     const longestStreak = data?.longest_streak ?? 0
+    const isOnFire = currentStreak >= 7
 
     return (
-        <Card className="w-full max-w-lg">
-            <CardHeader>
-                <CardTitle>
-                    <TypographyH3>Streak Tracker</TypographyH3>
-                </CardTitle>
-                <CardDescription className="text-base">
-                    Days you have stayed consistent.
-                </CardDescription>
+        <Card className="group relative overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
+            {/* Accent bar */}
+            <div className="absolute left-0 top-0 h-1 w-full bg-orange-500/30" />
+
+            <CardHeader className="relative pb-2">
+                <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${isOnFire ? 'bg-gradient-to-br from-orange-400 to-red-500' : 'bg-orange-500/10'
+                        }`}>
+                        <Flame className={`h-5 w-5 ${isOnFire ? 'text-white' : 'text-orange-500'}`} />
+                    </div>
+                    <div>
+                        <CardTitle className="text-xl font-bold">Streak Tracker</CardTitle>
+                        <CardDescription className="text-sm">
+                            Keep the momentum going
+                        </CardDescription>
+                    </div>
+                </div>
             </CardHeader>
-            <CardContent>
+
+            <CardContent className="relative space-y-6 pt-4">
                 {isLoading ? (
-                    <div className="space-y-3">
-                        <Skeleton className="h-8 w-48" />
+                    <div className="space-y-4">
+                        <Skeleton className="h-16 w-32" />
                         <Skeleton className="h-6 w-40" />
                     </div>
                 ) : isError ? (
-                    <p className="text-destructive">Failed to load streak data</p>
+                    <p className="text-destructive text-sm">Failed to load streak data</p>
                 ) : (
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Flame className="h-6 w-6 text-orange-500" />
-                            <span className="text-2xl font-bold">
-                                {currentStreak} day{currentStreak !== 1 ? 's' : ''}
+                    <>
+                        {/* Current Streak - Hero Number */}
+                        <div className="flex items-end gap-3">
+                            <span className="text-6xl font-black tabular-nums tracking-tight">
+                                {currentStreak}
                             </span>
-                            <span className="text-muted-foreground">current streak</span>
+                            <div className="mb-2 flex flex-col">
+                                <span className="text-lg font-semibold">days</span>
+                                <span className="text-xs text-muted-foreground">current streak</span>
+                            </div>
+                            {isOnFire && (
+                                <div className="mb-2 ml-2 flex items-center gap-1 rounded-full bg-orange-500/10 px-3 py-1">
+                                    <Flame className="h-3 w-3 text-orange-500" />
+                                    <span className="text-xs font-semibold text-orange-500">On Fire!</span>
+                                </div>
+                            )}
                         </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Trophy className="h-5 w-5 text-yellow-500" />
-                            <span>Best: {longestStreak} day{longestStreak !== 1 ? 's' : ''}</span>
+
+                        {/* Stats Row */}
+                        <div className="flex items-center gap-6 border-t pt-4">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500/10">
+                                    <Trophy className="h-4 w-4 text-yellow-500" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Best</p>
+                                    <p className="font-bold tabular-nums">{longestStreak} days</p>
+                                </div>
+                            </div>
+
+                            {currentStreak > 0 && longestStreak > 0 && (
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                                        <TrendingUp className="h-4 w-4 text-green-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Progress</p>
+                                        <p className="font-bold tabular-nums">
+                                            {Math.round((currentStreak / longestStreak) * 100)}%
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    </div>
+
+                        {/* Streak message */}
+                        <p className="text-sm text-muted-foreground">
+                            {currentStreak === 0
+                                ? "Start reviewing to begin your streak!"
+                                : currentStreak === longestStreak
+                                    ? "🎉 You're at your personal best!"
+                                    : `${longestStreak - currentStreak} more days to beat your record!`
+                            }
+                        </p>
+                    </>
                 )}
             </CardContent>
         </Card>
