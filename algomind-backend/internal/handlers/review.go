@@ -201,7 +201,31 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		_, _ = tx.ExecContext(ctx, resetConceptQuery, userID, entityID)
 	}
 
-	// 7️⃣ Commit
+	// 7️⃣ Update user streak
+	updateStreakQuery := `
+		UPDATE users SET
+			current_streak = CASE 
+				WHEN last_review_date = CURRENT_DATE THEN current_streak
+				WHEN last_review_date = CURRENT_DATE - 1 THEN current_streak + 1
+				ELSE 1
+			END,
+			longest_streak = GREATEST(longest_streak, 
+				CASE 
+					WHEN last_review_date = CURRENT_DATE THEN current_streak
+					WHEN last_review_date = CURRENT_DATE - 1 THEN current_streak + 1
+					ELSE 1
+				END),
+			last_review_date = CURRENT_DATE
+		WHERE id = $1
+	`
+	if _, err := tx.ExecContext(ctx, updateStreakQuery, userID); err != nil {
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to update user streak",
+		)
+	}
+
+	// 8️⃣ Commit
 	if err := tx.Commit(); err != nil {
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
