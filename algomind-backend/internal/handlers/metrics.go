@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -30,11 +31,11 @@ func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 			(SELECT COUNT(*) FROM review_states 
 			 WHERE user_id = $1 AND next_review_at <= NOW()) as due_count,
 			
-			(SELECT COALESCE(current_streak, 0) FROM users 
-			 WHERE id = $1) as current_streak,
+			COALESCE((SELECT current_streak FROM users 
+			 WHERE id = $1), 0) as current_streak,
 			
-			(SELECT COALESCE(longest_streak, 0) FROM users 
-			 WHERE id = $1) as longest_streak,
+			COALESCE((SELECT longest_streak FROM users 
+			 WHERE id = $1), 0) as longest_streak,
 			
 			(SELECT COUNT(*) FROM review_logs 
 			 WHERE user_id = $1 AND DATE(reviewed_at) = CURRENT_DATE) as reviews_today,
@@ -44,6 +45,7 @@ func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 	`
 
 	if err := h.DB.Db.GetContext(ctx, &summary, query, userID); err != nil {
+		fmt.Println("Dashboard metrics error:", err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to fetch dashboard metrics",

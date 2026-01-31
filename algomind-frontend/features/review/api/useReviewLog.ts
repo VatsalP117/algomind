@@ -26,8 +26,9 @@ export const useLogReview = () => {
             return res.data;
         },
         onSuccess: () => {
-            // Optional: Refetch specific stats if you have a heatmap
-            queryClient.invalidateQueries({ queryKey: ["stats"] });
+            // Invalidate metrics and review queue after logging a review
+            queryClient.invalidateQueries({ queryKey: ["metrics"] });
+            queryClient.invalidateQueries({ queryKey: ["review-problems"] });
         },
     });
 };

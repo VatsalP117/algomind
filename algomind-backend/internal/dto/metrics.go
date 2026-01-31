@@ -4,11 +4,11 @@ import "time"
 
 // DashboardSummary contains aggregated stats for the user dashboard
 type DashboardSummary struct {
-	DueCount      int `json:"due_count"`
-	CurrentStreak int `json:"current_streak"`
-	LongestStreak int `json:"longest_streak"`
-	ReviewsToday  int `json:"reviews_today"`
-	TotalProblems int `json:"total_problems"`
+	DueCount      int `json:"due_count" db:"due_count"`
+	CurrentStreak int `json:"current_streak" db:"current_streak"`
+	LongestStreak int `json:"longest_streak" db:"longest_streak"`
+	ReviewsToday  int `json:"reviews_today" db:"reviews_today"`
+	TotalProblems int `json:"total_problems" db:"total_problems"`
 }
 
 // RecallDataPoint represents recall quality for a single day

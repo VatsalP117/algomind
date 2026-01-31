@@ -1,12 +1,22 @@
 import { api } from '@/lib/api-client'
 import { useAuthQuery } from '@/features/useAuthQuery'
 
+export type Concept = {
+    id: number
+    title: string
+    description: string | null
+    content: string
+    created_at: string
+}
+
+const getConcepts = async (): Promise<Concept[]> => {
+    const res = await api.get('/concepts')
+    return res.data
+}
+
 export const useConcepts = () => {
-    return useAuthQuery({
+    return useAuthQuery<Concept[]>({
         queryKey: ['concepts'],
-        queryFn: async () => {
-            const res = await api.get('/concepts')
-            return res.data
-        },
+        queryFn: getConcepts,
     })
 }
