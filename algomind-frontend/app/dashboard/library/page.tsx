@@ -5,7 +5,6 @@ import { Library, FolderOpen } from 'lucide-react'
 export default function LibraryPage() {
     return (
         <div className="min-h-screen">
-            {/* Hero Header */}
             <div className="relative border-b">
                 <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
                     <div className="flex flex-col gap-2">
@@ -24,7 +23,6 @@ export default function LibraryPage() {
                 </div>
             </div>
 
-            {/* Main Content - Empty State */}
             <div className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
                 <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed py-16">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">

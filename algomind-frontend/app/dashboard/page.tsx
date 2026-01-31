@@ -13,7 +13,6 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen">
-            {/* Hero Header */}
             <div className="relative border-b">
                 <div className="relative mx-auto max-w-7xl px-6 py-12 lg:px-8">
                     <div className="flex flex-col gap-2">
@@ -30,7 +29,6 @@ export default function DashboardPage() {
                         </p>
                     </div>
 
-                    {/* Quick Stats Bar */}
                     <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
                         <QuickStat
                             icon={<Target className="h-4 w-4" />}
@@ -60,7 +58,6 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Main Content Grid */}
             <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
                 <div className="grid gap-6 md:grid-cols-2 lg:gap-8">
                     <QueueCard />

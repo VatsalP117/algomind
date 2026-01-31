@@ -11,7 +11,6 @@ export default function ConceptsListPage() {
 
     return (
         <div className="min-h-screen">
-            {/* Hero Header */}
             <div className="relative border-b">
                 <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
                     <div className="flex flex-col gap-2">
@@ -28,7 +27,6 @@ export default function ConceptsListPage() {
                         </p>
                     </div>
 
-                    {/* Quick Stats */}
                     {!isLoading && concepts && (
                         <div className="mt-6">
                             <div className="inline-flex items-center gap-2 rounded-lg border bg-card px-4 py-2">
@@ -40,7 +38,6 @@ export default function ConceptsListPage() {
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="mx-auto max-w-4xl px-6 py-8 lg:px-8">
                 {isLoading ? (
                     <div className="space-y-6">

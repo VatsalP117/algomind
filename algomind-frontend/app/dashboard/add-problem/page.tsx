@@ -7,7 +7,6 @@ import { PlusCircle, Link as LinkIcon } from "lucide-react"
 export default function AddProblemPage() {
     return (
         <div className="min-h-screen">
-            {/* Hero Header */}
             <div className="relative border-b">
                 <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
                     <div className="flex flex-col gap-2">
@@ -26,7 +25,6 @@ export default function AddProblemPage() {
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="mx-auto max-w-3xl px-6 py-8 lg:px-8">
                 <Card className="shadow-sm">
                     <CardHeader className="pb-4">
