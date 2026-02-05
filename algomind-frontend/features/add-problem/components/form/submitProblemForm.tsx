@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { useCreateItem } from "@/features/add-problem/api/useCreateItem"
+import { useFetchLeetCode } from "@/features/add-problem/api/useFetchLeetCode"
+import { Loader2, Sparkles, CheckCircle } from "lucide-react"
+import { toast } from "react-hot-toast"
 
 import { useForm, Controller } from "react-hook-form"
 import { useConcepts } from "@/features/edit-concepts/api/useConcepts"
@@ -24,24 +27,95 @@ type FormFields = {
     answer: string;
     hints: string;
 }
-export default function SubmitProblemForm() {
 
+// Check if URL is a LeetCode problem URL
+function isLeetCodeUrl(url: string): boolean {
+    return url.includes('leetcode.com/problems/')
+}
 
-    const form = useForm<FormFields>();
-    const { data: concepts } = useConcepts()
-    const { register, handleSubmit, formState } = form;
-    const { errors, isSubmitting } = formState;
-    const { mutateAsync } = useCreateItem();
-    const onSubmit = (data: FormFields) => {
-        console.log(data.concept)
-        console.log(concepts)
-        const conceptId = data.concept && data.concept !== "none" ? parseInt(data.concept) : null
-        mutateAsync({ ...data, conceptId: conceptId, difficulty: 'EASY' });
+// Strip query params and hash from URL
+function cleanLeetCodeUrl(url: string): string {
+    try {
+        const parsed = new URL(url)
+        return `${parsed.origin}${parsed.pathname}`
+    } catch {
+        return url
     }
+}
+
+export default function SubmitProblemForm() {
+    const form = useForm<FormFields>()
+    const { data: concepts } = useConcepts()
+    const { register, handleSubmit, formState, setValue, watch } = form
+    const { errors, isSubmitting } = formState
+    const { mutateAsync } = useCreateItem()
+    const { mutate: fetchLeetCode, isPending: isFetching, isSuccess: isFetched } = useFetchLeetCode()
+
+    // Watch the problem link field
+    const problemLink = watch("problemLink")
+
+    // Auto-fetch when a LeetCode URL is pasted
+    useEffect(() => {
+        if (problemLink && isLeetCodeUrl(problemLink)) {
+            // Debounce the fetch slightly to avoid multiple calls while typing
+            const timer = setTimeout(() => {
+                // Clean the URL before fetching (strip query params)
+                const cleanUrl = cleanLeetCodeUrl(problemLink)
+                fetchLeetCode(cleanUrl, {
+                    onSuccess: (data) => {
+                        // Auto-fill the form fields
+                        setValue("title", data.title)
+                        setValue("description", data.description)
+                        setValue("difficulty", data.difficulty)
+                        // Set summary to the first line of description or problem title
+                        const summaryText = data.title
+                        setValue("summary", summaryText)
+                        toast.success(`Fetched details for "${data.title}"`)
+                    }
+                })
+            }, 500)
+            return () => clearTimeout(timer)
+        }
+    }, [problemLink, fetchLeetCode, setValue])
+
+    const onSubmit = (data: FormFields) => {
+        const conceptId = data.concept && data.concept !== "none" ? parseInt(data.concept) : null
+        mutateAsync({ ...data, conceptId: conceptId, difficulty: data.difficulty || 'EASY' })
+    }
+
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Card>
                 <CardContent className="space-y-6">
+                    {/* Problem Link Field - Now at the top */}
+                    <div className="space-y-2">
+                        <Label htmlFor="problemLink">
+                            Problem Link
+                        </Label>
+                        <div className="relative">
+                            <Input
+                                {...register("problemLink")}
+                                type="url"
+                                placeholder="https://leetcode.com/problems/two-sum/"
+                                className="pr-10"
+                            />
+                            {isFetching && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                </div>
+                            )}
+                            {isFetched && !isFetching && problemLink && isLeetCodeUrl(problemLink) && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Sparkles className="h-3 w-3 text-yellow-500" />
+                            <span>Paste a LeetCode URL to auto-fill problem details</span>
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="title">
                             Problem Title
@@ -58,19 +132,6 @@ export default function SubmitProblemForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="problemLink">
-                            Problem Link
-                        </Label>
-                        <Input
-                            {...register("problemLink")}
-                            type="url"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Paste the full URL from LeetCode, HackerRank, or any other platform
-                        </p>
-                    </div>
-
-                    <div className="space-y-2">
                         <Label htmlFor="summary">
                             Problem Summary
                         </Label>
@@ -78,6 +139,7 @@ export default function SubmitProblemForm() {
                             {...register("summary", {
                                 required: "Summary is required",
                             })}
+                            placeholder="Brief summary of the problem"
                         />
                         <p className="text-xs text-red-500">
                             {form.formState.errors.summary?.message}
@@ -91,35 +153,58 @@ export default function SubmitProblemForm() {
                         <Textarea
                             {...register("description")}
                             rows={8}
+                            placeholder="Full problem description..."
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="conceptId">Associated Concept (Optional)</Label>
-                        <Controller
-                            control={form.control}
-                            name="concept"
-                            render={({ field }) => (
-                                <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                >
-                                    <SelectTrigger id="conceptId">
-                                        <SelectValue placeholder="Select a concept to link this problem" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {concepts?.map((concept) => (
-                                            <SelectItem key={concept.id} value={concept.id.toString()}>
-                                                {concept.title}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Link this problem to a concept for spaced repetition grouping
-                        </p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="difficulty">Difficulty</Label>
+                            <Controller
+                                control={form.control}
+                                name="difficulty"
+                                render={({ field }) => (
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                    >
+                                        <SelectTrigger id="difficulty">
+                                            <SelectValue placeholder="Select difficulty" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Easy">Easy</SelectItem>
+                                            <SelectItem value="Medium">Medium</SelectItem>
+                                            <SelectItem value="Hard">Hard</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="conceptId">Associated Concept</Label>
+                            <Controller
+                                control={form.control}
+                                name="concept"
+                                render={({ field }) => (
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    >
+                                        <SelectTrigger id="conceptId">
+                                            <SelectValue placeholder="Select a concept" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {concepts?.map((concept) => (
+                                                <SelectItem key={concept.id} value={concept.id.toString()}>
+                                                    {concept.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -149,7 +234,7 @@ export default function SubmitProblemForm() {
                     <Button type="button" variant="destructive">
                         Reset
                     </Button>
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting || isFetching}>
                         {isSubmitting ? "Saving..." : "Save Problem"}
                     </Button>
                 </CardFooter>

@@ -17,6 +17,7 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	reviewHandler := handlers.NewReviewHandler(db)
 	conceptHandler := handlers.NewConceptHandler(db)
 	metricsHandler := handlers.NewMetricsHandler(db)
+	leetcodeHandler := handlers.NewLeetCodeHandler()
 
 	internalConceptHandler := handlers.NewInternalConceptHandler(db)
 	internalProblemHandler := handlers.NewInternalProblemHandler(db)
@@ -34,6 +35,9 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	api.POST("/problems", problemHandler.CreateProblem)
 	api.GET("/reviews/queue", reviewHandler.GetQueue)
 	api.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
+
+	// LeetCode fetch endpoint
+	api.GET("/leetcode/fetch", leetcodeHandler.FetchProblem)
 
 	// Metrics endpoints
 	api.GET("/metrics/dashboard", metricsHandler.GetDashboard)
