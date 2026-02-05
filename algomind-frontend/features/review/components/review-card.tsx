@@ -77,18 +77,27 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                 <p className="text-muted-foreground">{problem.summary}</p>
             </CardHeader>
 
-            <CardContent className="min-h-[200px] flex flex-col justify-center relative">
-                {!revealed ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
+            <CardContent className="min-h-[200px] flex flex-col gap-4">
+                {/* Problem Description */}
+                {problem.description && (
+                    <div
+                        className="prose prose-sm dark:prose-invert max-w-none rounded-md border bg-muted/30 p-4 max-h-64 overflow-y-auto"
+                        dangerouslySetInnerHTML={{ __html: problem.description }}
+                    />
+                )}
+
+                {/* Answer Section */}
+                <div className="flex-1 flex items-center justify-center relative">
+                    {!revealed ? (
                         <Button size="lg" onClick={() => setRevealed(true)}>
                             <Eye className="w-4 h-4 mr-2" /> Reveal Answer
                         </Button>
-                    </div>
-                ) : (
-                    <div className="prose dark:prose-invert">
-                        <p className="whitespace-pre-wrap">{problem.answer}</p>
-                    </div>
-                )}
+                    ) : (
+                        <div className="prose dark:prose-invert w-full">
+                            <p className="whitespace-pre-wrap">{problem.answer}</p>
+                        </div>
+                    )}
+                </div>
             </CardContent>
 
             <CardFooter className={cn(

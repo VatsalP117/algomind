@@ -5,6 +5,7 @@ export type ReviewProblem = {
     entity_type: string;
     title: string;
     summary: string;
+    description: string;
     difficulty: string;
     answer: string;
     hints: string;

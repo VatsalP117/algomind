@@ -11,6 +11,7 @@ type ReviewQueueItem struct {
 	ProblemTitle *string `db:"problem_title" json:"title,omitempty"`
 	Difficulty   *string `db:"difficulty" json:"difficulty,omitempty"`
 	Summary      *string `db:"summary" json:"summary,omitempty"`
+	Description  *string `db:"description" json:"description,omitempty"`
 	Answer       *string `db:"answer" json:"answer,omitempty"`
 	Hints        *string `db:"hints" json:"hints,omitempty"`
 

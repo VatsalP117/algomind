@@ -33,11 +33,12 @@ func (h *ReviewHandler) GetQueue(c echo.Context) error {
 	rs.next_review_at,
 
 	-- Problem fields
-	p.title      AS problem_title,
-	p.difficulty AS difficulty,
-	p.summary    AS summary,
-	p.answer     AS answer,
-	p.hints      AS hints,
+	p.title       AS problem_title,
+	p.difficulty  AS difficulty,
+	p.summary     AS summary,
+	p.description AS description,
+	p.answer      AS answer,
+	p.hints       AS hints,
 
 	-- Concept fields
 	con.title    AS concept_title,

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { useCreateItem } from "@/features/add-problem/api/useCreateItem"
 import { useFetchLeetCode } from "@/features/add-problem/api/useFetchLeetCode"
-import { Loader2, Sparkles, CheckCircle } from "lucide-react"
+import { Loader2, Sparkles, CheckCircle, ChevronDown, ChevronUp, Eye } from "lucide-react"
 import { toast } from "react-hot-toast"
 
 import { useForm, Controller } from "react-hook-form"
@@ -146,16 +146,10 @@ export default function SubmitProblemForm() {
                         </p>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="description">
-                            Problem Description
-                        </Label>
-                        <Textarea
-                            {...register("description")}
-                            rows={8}
-                            placeholder="Full problem description..."
-                        />
-                    </div>
+                    <DescriptionField
+                        register={register}
+                        description={watch("description")}
+                    />
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -240,5 +234,53 @@ export default function SubmitProblemForm() {
                 </CardFooter>
             </Card>
         </form>
+    )
+}
+
+// Component for description field with HTML preview
+function DescriptionField({
+    register,
+    description
+}: {
+    register: any;
+    description: string;
+}) {
+    const [showPreview, setShowPreview] = useState(false)
+    const hasContent = description && description.trim().length > 0
+
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <Label htmlFor="description">
+                    Problem Description
+                </Label>
+                {hasContent && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="text-xs h-7 gap-1"
+                    >
+                        <Eye className="h-3 w-3" />
+                        {showPreview ? "Edit" : "Preview"}
+                        {showPreview ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </Button>
+                )}
+            </div>
+
+            {showPreview && hasContent ? (
+                <div
+                    className="prose prose-sm dark:prose-invert max-w-none rounded-md border bg-muted/30 p-4 max-h-96 overflow-y-auto"
+                    dangerouslySetInnerHTML={{ __html: description }}
+                />
+            ) : (
+                <Textarea
+                    {...register("description")}
+                    rows={8}
+                    placeholder="Full problem description..."
+                />
+            )}
+        </div>
     )
 }
