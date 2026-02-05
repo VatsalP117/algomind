@@ -120,6 +120,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-geist-mono);
+    /* font-family: var(--font-geist-mono); */
+    font-family: 'Inter', sans-serif;
   }
 }

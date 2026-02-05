@@ -3,18 +3,13 @@ import {
     Card,
     CardAction,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import {
     TypographyH2,
     TypographyH3,
-    TypographyH4,
     TypographySmall,
-    TypographyP,
 } from '../shared/typography'
 
 export default function SectionCard() {

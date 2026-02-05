@@ -30,14 +30,12 @@ const chartConfig = {
 export function ChartLineLinear() {
     const { data, isLoading, isError } = useRecallQuality(7)
 
-    // Transform data for chart
     const chartData = data?.map((point) => ({
         date: new Date(point.date).toLocaleDateString('en-US', { weekday: 'short' }),
         recall_rate: point.recall_rate,
         total_reviews: point.total_reviews,
     })) ?? []
 
-    // Calculate trend
     const getTrend = () => {
         if (!data || data.length < 2) return { direction: 'neutral', value: 0 }
         const recent = data.slice(-3)
