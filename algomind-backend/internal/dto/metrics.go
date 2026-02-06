@@ -2,7 +2,6 @@ package dto
 
 import "time"
 
-// DashboardSummary contains aggregated stats for the user dashboard
 type DashboardSummary struct {
 	DueCount      int `json:"due_count" db:"due_count"`
 	CurrentStreak int `json:"current_streak" db:"current_streak"`
@@ -11,7 +10,6 @@ type DashboardSummary struct {
 	TotalProblems int `json:"total_problems" db:"total_problems"`
 }
 
-// RecallDataPoint represents recall quality for a single day
 type RecallDataPoint struct {
 	Date              time.Time `json:"date" db:"date"`
 	TotalReviews      int       `json:"total_reviews" db:"total_reviews"`
@@ -19,7 +17,6 @@ type RecallDataPoint struct {
 	RecallRate        float64   `json:"recall_rate" db:"recall_rate"`
 }
 
-// TopicMastery represents mastery metrics for a concept
 type TopicMastery struct {
 	ConceptID     int64   `json:"concept_id" db:"concept_id"`
 	ConceptTitle  string  `json:"concept_title" db:"concept_title"`

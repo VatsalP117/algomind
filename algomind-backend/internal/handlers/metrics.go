@@ -18,14 +18,12 @@ func NewMetricsHandler(db *database.Service) *MetricsHandler {
 	return &MetricsHandler{DB: db}
 }
 
-// GetDashboard returns aggregated stats for the user dashboard
 func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
 
 	var summary dto.DashboardSummary
 
-	// Query all dashboard metrics in one go using subqueries
 	query := `
 		SELECT 
 			(SELECT COUNT(*) FROM review_states 
@@ -55,12 +53,10 @@ func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 	return c.JSON(http.StatusOK, summary)
 }
 
-// GetRecallQuality returns daily recall quality data for the specified number of days
 func (h *MetricsHandler) GetRecallQuality(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
 
-	// Parse days parameter, default to 7
 	daysStr := c.QueryParam("days")
 	days := 7
 	if daysStr != "" {
@@ -101,7 +97,6 @@ func (h *MetricsHandler) GetRecallQuality(c echo.Context) error {
 	return c.JSON(http.StatusOK, dataPoints)
 }
 
-// GetTopicMastery returns mastery metrics for each concept the user has studied
 func (h *MetricsHandler) GetTopicMastery(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()

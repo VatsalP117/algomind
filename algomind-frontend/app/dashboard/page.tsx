@@ -6,6 +6,8 @@ import { ChartLineLinear } from '@/components/dashboard/LineChart'
 import { ChartRadarDefault } from '@/components/dashboard/RadarChart'
 import { useDashboardMetrics } from '@/features/dashboard'
 import { Sparkles, Target, TrendingUp, BookOpen } from 'lucide-react'
+import HeadingSection from '@/components/shared/heading-section'
+import { FeaturePagesHeaderInfo } from '@/constants/sidebar-links'
 
 export default function DashboardPage() {
     const { data } = useDashboardMetrics()
@@ -15,20 +17,9 @@ export default function DashboardPage() {
         <div className="min-h-screen">
             <div className="relative border-b">
                 <div className="relative mx-auto max-w-7xl px-6 py-12 lg:px-8">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
-                                <Sparkles className="h-5 w-5" />
-                            </div>
-                            <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
-                                Dashboard
-                            </h1>
-                        </div>
-                        <p className="text-muted-foreground max-w-2xl">
-                            Track your learning progress, maintain your streak, and master algorithms one problem at a time.
-                        </p>
-                    </div>
-
+                    <HeadingSection
+                        {...FeaturePagesHeaderInfo.dashboard}
+                    />
                     <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
                         <QuickStat
                             icon={<Target className="h-4 w-4" />}

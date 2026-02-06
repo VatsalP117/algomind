@@ -71,7 +71,6 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		)
 	}
 
-	// 4. Create initial review state
 	insertReviewStateQuery := `
 		INSERT INTO review_states (
 			user_id,
@@ -100,7 +99,6 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		)
 	}
 
-	// 5. Return success
 	return c.JSON(http.StatusCreated, map[string]interface{}{
 		"id": problemID,
 	})

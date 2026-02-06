@@ -21,7 +21,6 @@ type CreateConceptRequest struct {
 	Content     string `json:"content" validate:"required"`
 }
 
-// CreateConcept creates a global concept (INTERNAL USE ONLY)
 func (h *InternalConceptHandler) CreateConcept(c echo.Context) error {
 	var req CreateConceptRequest
 
