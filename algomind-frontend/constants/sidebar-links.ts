@@ -2,7 +2,7 @@ import {
     ChartBar,
     BookOpen,
     ClipboardPenLine,
-    PencilLine,
+    GraduationCap,
     BookOpenText,
 } from 'lucide-react'
 
@@ -24,9 +24,9 @@ export const sidebarItems = [
         icon: ClipboardPenLine,
     },
     {
-        title: 'Edit Concepts',
+        title: 'Study Concepts',
         url: `${URL_PREFIX}/edit-concepts`,
-        icon: PencilLine,
+        icon: GraduationCap,
     },
     {
         title: 'Library',
@@ -42,8 +42,8 @@ export const FeaturePagesHeaderInfo = {
             'Link LeetCode problems to concepts for spaced repetition review.',
     },
     edit_concepts: {
-        title: 'Edit Concepts',
-        description: 'Manage and update your concept definitions.'
+        title: 'Study Concepts',
+        description: 'Browse and study core algorithms and data structures concepts.'
     },
     dashboard: {
         title: 'Dashboard',
