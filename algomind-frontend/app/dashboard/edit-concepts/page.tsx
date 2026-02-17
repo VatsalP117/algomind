@@ -36,15 +36,7 @@ function ConceptStudyView({ concept, onBack }: { concept: Concept; onBack: () =>
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                             <BookOpen className="h-5 w-5 text-primary" />
                         </div>
-                        <div>
-                            <CardTitle className="text-2xl">{concept.title}</CardTitle>
-                            {concept.description && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {concept.description}
-                                </p>
-                            )}
-                        </div>
-                    </div>
+                        <CardTitle className="text-2xl">{concept.title}</CardTitle>                    </div>
                 </CardHeader>
                 <CardContent className="pt-8 pb-8 px-8 lg:px-12">
                     <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:mb-2 prose-ul:my-2">
@@ -109,11 +101,6 @@ function ConceptGrid({
                                             <h3 className="font-semibold truncate">
                                                 {concept.title}
                                             </h3>
-                                            {concept.description && (
-                                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                                    {concept.description}
-                                                </p>
-                                            )}
                                         </div>
                                     </div>
                                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary mt-2.5" />
