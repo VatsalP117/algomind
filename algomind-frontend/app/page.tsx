@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Brain, BookOpen, Zap, BarChart3, ArrowRight, CheckCircle, Clock, TrendingUp } from 'lucide-react'
+import { Brain, BookOpen, Zap, BarChart3, CheckCircle, Clock, TrendingUp } from 'lucide-react'
 import { LandingNav } from '@/components/shared/landing-nav'
 import { ForgettingCurveChart } from '@/components/shared/forgetting-curve-chart'
+import { HeroCTA } from '@/components/shared/hero-cta'
 
 
 export default function LandingPage() {
@@ -32,18 +33,7 @@ export default function LandingPage() {
           Algomind uses spaced repetition — the same technique used by memory champions — to make sure algorithms and data structures stick in your long-term memory, not just for the next interview.
         </p>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/sign-up">
-            <Button size="lg" className="gap-2 px-8">
-              Start for free <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/sign-in">
-            <Button size="lg" variant="outline" className="px-8">
-              Sign in
-            </Button>
-          </Link>
-        </div>
+        <HeroCTA />
 
         <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
           {[
@@ -237,13 +227,7 @@ export default function LandingPage() {
           <p className="mt-4 text-lg text-muted-foreground">
             Join Algomind and turn your LeetCode grind into lasting knowledge.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/sign-up">
-              <Button size="lg" className="gap-2 px-8">
-                Get started for free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          <HeroCTA />
         </div>
       </section>
 

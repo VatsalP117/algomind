@@ -1,12 +1,22 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@clerk/nextjs'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Brain, Moon, Sun } from 'lucide-react'
 
 export function LandingNav() {
     const { theme, setTheme } = useTheme()
+    const { isSignedIn } = useAuth()
+    const router = useRouter()
+
+    const handleAuthAction = () => {
+        if (isSignedIn) {
+            router.push('/dashboard')
+        }
+    }
 
     return (
         <nav className="fixed top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
@@ -28,12 +38,21 @@ export function LandingNav() {
                         <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                         <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     </Button>
-                    <Link href="/sign-in">
-                        <Button variant="ghost" size="sm">Sign in</Button>
-                    </Link>
-                    <Link href="/sign-up">
-                        <Button size="sm">Get started</Button>
-                    </Link>
+
+                    {isSignedIn ? (
+                        <Button onClick={() => router.push('/dashboard')} size="sm">
+                            Go to dashboard
+                        </Button>
+                    ) : (
+                        <>
+                            <Link href="/sign-in">
+                                <Button variant="ghost" size="sm">Sign in</Button>
+                            </Link>
+                            <Link href="/sign-up">
+                                <Button size="sm">Get started</Button>
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>
