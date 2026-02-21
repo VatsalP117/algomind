@@ -1,10 +1,13 @@
 # ---- Build Stage ----
 FROM golang:1.24-alpine AS builder
 
-# Install git and ca-certificates (needed for fetching modules over HTTPS)
-RUN apk add --no-cache git ca-certificates tzdata
+RUN apk add --no-cache git ca-certificates tzdata curl
 
 WORKDIR /app
+
+# Download golang-migrate binary
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.1/migrate.linux-amd64.tar.gz \
+    | tar xvz && mv migrate /usr/local/bin/migrate
 
 # Cache dependencies separately from source
 COPY go.mod go.sum ./
@@ -21,8 +24,19 @@ RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
+# Copy Go binary
 COPY --from=builder /app/server .
+
+# Copy migrate binary
+COPY --from=builder /usr/local/bin/migrate /usr/local/bin/migrate
+
+# Copy migration files
+COPY migrations ./migrations
+
+# Copy entrypoint script
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
 EXPOSE 8080
 
-CMD ["./server"]
+ENTRYPOINT ["./entrypoint.sh"]
