@@ -10,7 +10,8 @@ export function AnalyticsComponent() {
         // Only initialize once on mount
         const analytics = new Iris({
             host: "https://analytics.algomind.pro",
-            siteId: "algomind"
+            siteId: "algomind",
+            autocapture: false,
         });
 
         // Automatically tracks pageviews / web-vitals
