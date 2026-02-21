@@ -1,6 +1,6 @@
 module github.com/VatsalP117/algomind/algomind-backend
 
-go 1.25.3
+go 1.24.0
 
 require (
 	github.com/clerk/clerk-sdk-go/v2 v2.5.0
