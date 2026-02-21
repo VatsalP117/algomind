@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import Providers from "@/components/providers";
+import { AnalyticsComponent } from '@/components/AnalyticsComponent'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -41,6 +42,7 @@ export default function RootLayout({
                         >
                             <Toaster />
                             {children}
+                            <AnalyticsComponent />
                         </ThemeProvider>
                     </body>
                 </html>
