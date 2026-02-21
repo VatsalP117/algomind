@@ -48,9 +48,9 @@ export const useCreateItem = () => {
         },
 
         onSuccess: () => {
-            // 5. Cleanup & Redirect
-            // Invalidate the library list so the new item appears immediately
-            queryClient.invalidateQueries({ queryKey: ['items'] })
+            // A new problem immediately enters the review queue and changes dashboard totals
+            queryClient.invalidateQueries({ queryKey: ['review-problems'] })
+            queryClient.invalidateQueries({ queryKey: ['metrics'] })
             toast.success('Problem added successfully')
         },
 

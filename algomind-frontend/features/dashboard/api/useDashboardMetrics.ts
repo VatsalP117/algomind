@@ -11,6 +11,6 @@ export const useDashboardMetrics = () => {
     return useAuthQuery<DashboardSummary>({
         queryKey: ['metrics', 'dashboard'],
         queryFn: getDashboardMetrics,
-        staleTime: 30 * 1000, // 30 seconds
+        staleTime: 2 * 60 * 1000, // 2 min
     })
 }

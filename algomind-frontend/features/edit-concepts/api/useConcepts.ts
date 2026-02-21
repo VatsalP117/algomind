@@ -18,5 +18,7 @@ export const useConcepts = () => {
     return useAuthQuery<Concept[]>({
         queryKey: ['concepts'],
         queryFn: getConcepts,
+        staleTime: 10 * 60 * 1000, // 10 min — concepts are global & rarely change
+        gcTime: 30 * 60 * 1000,   // keep in memory for 30 min
     })
 }
