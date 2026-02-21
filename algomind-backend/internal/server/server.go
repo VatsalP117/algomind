@@ -29,7 +29,10 @@ func NewServer(cfg *config.Config) *Server {
 
 	e.Use(middleware.CORSWithConfig(
 		middleware.CORSConfig{
-			AllowOrigins: []string{"http://localhost:3000"},
+			AllowOrigins: []string{
+				"http://localhost:3000",
+				"https://algomind.pro",
+			},
 			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		}))
 
