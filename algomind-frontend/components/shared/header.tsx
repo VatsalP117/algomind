@@ -1,15 +1,13 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Github, LogOut } from "lucide-react";
+import { Moon, Sun, Github } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme();
-  const { signOut } = useClerk();
 
   return (
     <header className="sticky top-0 z-40">
@@ -37,16 +35,6 @@ export function SiteHeader() {
             >
               <Github className="h-4 w-4" />
             </a>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-muted-foreground hover:text-destructive"
-            onClick={() => signOut({ redirectUrl: '/' })}
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>
