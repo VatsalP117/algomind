@@ -59,11 +59,9 @@ GET  /api/v1/metrics/dashboard
 GET  /api/v1/metrics/recall
 GET  /api/v1/metrics/mastery
 
-POST /internal/concepts      (admin only)
-GET  /internal/problems      (admin only)
 ```
 
-All `/api/v1` and `/internal` routes require a valid Clerk session token in the `Authorization` header.
+All routes require a valid Clerk session token in the `Authorization` header.
 
 ### Database Schema
 
