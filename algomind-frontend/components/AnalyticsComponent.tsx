@@ -23,7 +23,7 @@ export function AnalyticsComponent() {
         // In React 18 / Next.js Strict Mode, make sure to clean up 
         // to prevent duplicate events during dev hot-reloads
         return () => analytics.stop();
-    }, [pathname]);
+    }, []);
 
     return null;
 }
