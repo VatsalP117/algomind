@@ -11,7 +11,10 @@ export function AnalyticsComponent() {
         const analytics = new Iris({
             host: "https://analytics.algomind.pro",
             siteId: "algomind",
-            autocapture: false,
+            autocapture: {
+                pageviews: true,
+                webvitals: true,
+            }
         });
 
         // Automatically tracks pageviews / web-vitals
