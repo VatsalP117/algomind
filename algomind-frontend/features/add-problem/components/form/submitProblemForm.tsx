@@ -245,7 +245,7 @@ function DescriptionField({
     register: any;
     description: string;
 }) {
-    const [showPreview, setShowPreview] = useState(false)
+    const [showPreview, setShowPreview] = useState(true)
     const hasContent = description && description.trim().length > 0
 
     return (
