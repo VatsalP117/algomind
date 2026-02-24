@@ -25,7 +25,7 @@ type BackendPayload = {
     hints: string
 }
 
-export const useCreateItem = () => {
+export const useCreateProblem = () => {
     const queryClient = useQueryClient()
     const router = useRouter()
 
