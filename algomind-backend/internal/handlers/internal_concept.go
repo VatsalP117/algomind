@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
@@ -24,10 +25,14 @@ type CreateConceptRequest struct {
 func (h *InternalConceptHandler) CreateConcept(c echo.Context) error {
 	var req CreateConceptRequest
 
+	log.Printf("Received request to create internal concept")
+
 	if err := c.Bind(&req); err != nil {
+		log.Printf("Error binding CreateConcept request: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid JSON body")
 	}
 	if err := c.Validate(&req); err != nil {
+		log.Printf("Error validating CreateConcept request for title '%s': %v", req.Title, err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
@@ -47,11 +52,14 @@ func (h *InternalConceptHandler) CreateConcept(c echo.Context) error {
 		req.Description,
 		req.Content,
 	).Scan(&conceptID); err != nil {
+		log.Printf("Database error creating internal concept with title '%s': %v", req.Title, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to create concept",
 		)
 	}
+
+	log.Printf("Successfully created internal concept ID %d", conceptID)
 
 	return c.JSON(http.StatusCreated, map[string]interface{}{
 		"id":      conceptID,

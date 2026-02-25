@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
@@ -77,11 +78,15 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 	entityID := c.Param("entity_id")
 	userID := c.Get("user_id").(string)
 
+	log.Printf("Received request to log review for User ID: %s, Entity Type: %s, Entity ID: %s", userID, entityType, entityID)
+
 	var req LogReviewRequest
 	if err := c.Bind(&req); err != nil {
+		log.Printf("Error binding LogReview request: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid JSON body")
 	}
 	if err := c.Validate(&req); err != nil {
+		log.Printf("Error validating LogReview request (Rating: '%s'): %v", req.Rating, err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
@@ -110,6 +115,7 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		entityType,
 		entityID,
 	); err != nil {
+		log.Printf("Review state not found for User ID: %s, Type: %s, ID: %s. Error: %v", userID, entityType, entityID, err)
 		return echo.NewHTTPError(http.StatusNotFound, "review state not found")
 	}
 
@@ -124,6 +130,7 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 	// 3️⃣ Start transaction
 	tx, err := h.DB.Db.Beginx()
 	if err != nil {
+		log.Printf("Database error: failed to start transaction for logging review: %v", err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to start transaction",
@@ -154,6 +161,7 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		entityType,
 		entityID,
 	); err != nil {
+		log.Printf("Database error: failed to update review state for User %s, %s %s: %v", userID, entityType, entityID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to update review state",
@@ -179,6 +187,7 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		entityID,
 		req.Rating,
 	); err != nil {
+		log.Printf("Database error: failed to log review entry for User %s, %s %s: %v", userID, entityType, entityID, err)
 		fmt.Println(err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
@@ -188,6 +197,7 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 
 	// 6️⃣ Cascading reset: fail PROBLEM → reset parent CONCEPT
 	if entityType == "problem" && req.Rating == "AGAIN" {
+		log.Printf("Problem %s rated 'AGAIN', cascading reset to parent concept...", entityID)
 		resetConceptQuery := `
 			UPDATE review_states
 			SET next_review_at = NOW(),
@@ -199,7 +209,9 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 				  SELECT concept_id FROM problems WHERE id = $2
 			  )
 		`
-		_, _ = tx.ExecContext(ctx, resetConceptQuery, userID, entityID)
+		if _, err := tx.ExecContext(ctx, resetConceptQuery, userID, entityID); err != nil {
+			log.Printf("Warning: failed cascading reset for concept related to problem %s: %v", entityID, err)
+		}
 	}
 
 	// 7️⃣ Update user streak
@@ -220,6 +232,7 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		WHERE id = $1
 	`
 	if _, err := tx.ExecContext(ctx, updateStreakQuery, userID); err != nil {
+		log.Printf("Database error: failed to update streak for User %s: %v", userID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to update user streak",
@@ -228,11 +241,14 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 
 	// 8️⃣ Commit
 	if err := tx.Commit(); err != nil {
+		log.Printf("Database error: failed to commit review logging transaction for User %s: %v", userID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to commit transaction",
 		)
 	}
+
+	log.Printf("Successfully logged review for User %s, %s %s (Rating: %s)", userID, entityType, entityID, req.Rating)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message":     "review logged",

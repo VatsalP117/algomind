@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -20,11 +21,15 @@ func NewProblemHandler(db *database.Service) *ProblemHandler {
 func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 	var req dto.CreateProblemRequest
 
+	log.Printf("Received request to create problem")
+
 	if err := c.Bind(&req); err != nil {
+		log.Printf("Error binding CreateProblem request: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid JSON body")
 	}
 
 	if err := c.Validate(&req); err != nil {
+		log.Printf("Error validating CreateProblem request for title '%s': %v", req.Title, err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
@@ -65,11 +70,14 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		req.Answer,
 		req.Hints,
 	).Scan(&problemID); err != nil {
+		log.Printf("Database error creating problem for user %s, title '%s': %v", userID, req.Title, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to create problem",
 		)
 	}
+
+	log.Printf("Successfully inserted problem ID %d for user %s", problemID, userID)
 
 	insertReviewStateQuery := `
 		INSERT INTO review_states (
@@ -93,11 +101,14 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		problemID,
 		time.Now(),
 	); err != nil {
+		log.Printf("Database error creating review state for problem ID %d, user %s: %v", problemID, userID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to create review state",
 		)
 	}
+
+	log.Printf("Successfully created review state for problem ID %d", problemID)
 
 	return c.JSON(http.StatusCreated, map[string]interface{}{
 		"id": problemID,
