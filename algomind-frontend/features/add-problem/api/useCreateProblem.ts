@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
 import { toast } from 'react-hot-toast'
 
-export type CreateItemInput = {
+export type CreateProblemInput = {
     title: string
     problemLink: string
     conceptId: number | null
@@ -14,7 +14,7 @@ export type CreateItemInput = {
     hints: string
 }
 
-type BackendPayload = {
+type Payload = {
     concept_id: number | null
     title: string
     link: string
@@ -25,17 +25,17 @@ type BackendPayload = {
     hints: string
 }
 
-export const useCreateItem = () => {
+export const useCreateProblem = () => {
     const queryClient = useQueryClient()
     const router = useRouter()
 
     return useMutation({
-        mutationFn: async (data: CreateItemInput) => {
-            const payload: BackendPayload = {
+        mutationFn: async (data: CreateProblemInput) => {
+            const payload: Payload = {
                 concept_id: data.conceptId, // Default to 0 if null, as Go int64 is non-nullable
                 title: data.title,
                 link: data.problemLink || '',
-                difficulty: 'EASY',
+                difficulty: data.difficulty ? data.difficulty.toUpperCase() : 'EASY',
                 summary: data.summary,
                 description: data.description || '',
                 answer: data.answer,

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { useCreateItem } from "@/features/add-problem/api/useCreateItem"
+import { useCreateProblem } from "@/features/add-problem/api/useCreateProblem"
 import { useFetchLeetCode } from "@/features/add-problem/api/useFetchLeetCode"
 import { Loader2, Sparkles, CheckCircle, ChevronDown, ChevronUp, Eye } from "lucide-react"
 import { toast } from "react-hot-toast"
@@ -46,9 +46,9 @@ function cleanLeetCodeUrl(url: string): string {
 export default function SubmitProblemForm() {
     const form = useForm<FormFields>()
     const { data: concepts } = useConcepts()
-    const { register, handleSubmit, formState, setValue, watch } = form
+    const { register, handleSubmit, formState, setValue, watch, reset: resetFormState } = form
     const { errors, isSubmitting } = formState
-    const { mutateAsync } = useCreateItem()
+    const { mutateAsync } = useCreateProblem()
     const { mutate: fetchLeetCode, isPending: isFetching, isSuccess: isFetched } = useFetchLeetCode()
 
     // Watch the problem link field
@@ -81,6 +81,7 @@ export default function SubmitProblemForm() {
     const onSubmit = (data: FormFields) => {
         const conceptId = data.concept && data.concept !== "none" ? parseInt(data.concept) : null
         mutateAsync({ ...data, conceptId: conceptId, difficulty: data.difficulty || 'EASY' })
+        resetFormState()
     }
 
     return (
@@ -118,7 +119,7 @@ export default function SubmitProblemForm() {
 
                     <div className="space-y-2">
                         <Label htmlFor="title">
-                            Problem Title
+                            Problem Title <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             {...register("title", {
@@ -133,7 +134,7 @@ export default function SubmitProblemForm() {
 
                     <div className="space-y-2">
                         <Label htmlFor="summary">
-                            Problem Summary
+                            Problem Summary <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             {...register("summary", {
@@ -153,10 +154,11 @@ export default function SubmitProblemForm() {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="difficulty">Difficulty</Label>
+                            <Label htmlFor="difficulty">Difficulty <span className="text-red-500">*</span></Label>
                             <Controller
                                 control={form.control}
                                 name="difficulty"
+                                rules={{ required: "Difficulty is required" }}
                                 render={({ field }) => (
                                     <Select
                                         onValueChange={field.onChange}
@@ -173,13 +175,17 @@ export default function SubmitProblemForm() {
                                     </Select>
                                 )}
                             />
+                            <p className="text-xs text-red-500">
+                                {form.formState.errors.difficulty?.message}
+                            </p>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="conceptId">Associated Concept</Label>
+                            <Label htmlFor="conceptId">Associated Concept <span className="text-red-500">*</span></Label>
                             <Controller
                                 control={form.control}
                                 name="concept"
+                                rules={{ required: "Concept is required" }}
                                 render={({ field }) => (
                                     <Select
                                         onValueChange={field.onChange}
@@ -198,6 +204,9 @@ export default function SubmitProblemForm() {
                                     </Select>
                                 )}
                             />
+                            <p className="text-xs text-red-500">
+                                {form.formState.errors.concept?.message}
+                            </p>
                         </div>
                     </div>
 
@@ -211,7 +220,7 @@ export default function SubmitProblemForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="answer">Answer</Label>
+                        <Label htmlFor="answer">Answer <span className="text-red-500">*</span></Label>
                         <Textarea
                             {...register("answer", {
                                 required: "Answer is required",
