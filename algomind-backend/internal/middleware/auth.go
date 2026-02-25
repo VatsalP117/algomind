@@ -5,17 +5,18 @@ import (
 	"os"
 	"strings"
 
+	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/clerk/clerk-sdk-go/v2/jwt" // <--- The new package for verification
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
 type AuthMiddleware struct {
-	// No client needed here anymore!
+	DB *database.Service
 }
 
-func New() *AuthMiddleware {
-	return &AuthMiddleware{}
+func New(db *database.Service) *AuthMiddleware {
+	return &AuthMiddleware{DB: db}
 }
 
 func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
@@ -37,6 +38,11 @@ func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 			if testUserID == "" {
 				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "TEST_USER_ID not set"})
 			}
+
+			if err := am.ensureUserExists(c, testUserID); err != nil {
+				return err
+			}
+
 			c.Set("user_id", testUserID)
 			return next(c)
 		}
@@ -54,8 +60,25 @@ func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// 3. Success! claims.Subject is the User ID
+		if err := am.ensureUserExists(c, claims.Subject); err != nil {
+			return err
+		}
+
 		c.Set("user_id", claims.Subject)
 
 		return next(c)
 	}
+}
+
+func (am *AuthMiddleware) ensureUserExists(c echo.Context, userID string) error {
+	_, err := am.DB.Db.ExecContext(
+		c.Request().Context(),
+		`INSERT INTO users (id, created_at) VALUES ($1, NOW()) ON CONFLICT (id) DO NOTHING`,
+		userID,
+	)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID).Msg("Failed to ensure user exists")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to sync user"})
+	}
+	return nil
 }

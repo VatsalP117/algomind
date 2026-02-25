@@ -9,7 +9,7 @@ import (
 )
 
 func RegisterRoutes(e *echo.Echo, db *database.Service) {
-	authMiddleware := middleware.New()
+	authMiddleware := middleware.New(db)
 
 	userHandler := handlers.NewUserHandler(db)
 	problemHandler := handlers.NewProblemHandler(db)
