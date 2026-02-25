@@ -11,6 +11,7 @@ export type CreateProblemInput = {
     summary: string
     description: string
     answer: string
+    answerLanguage?: string
     hints: string
 }
 
@@ -22,7 +23,38 @@ type Payload = {
     summary: string
     description: string
     answer: string
+    answer_language: string | null
     hints: string
+}
+
+const markdownSignals = [
+    /^#{1,6}\s/m,
+    /^\s*[-*+]\s/m,
+    /^\s*\d+\.\s/m,
+    /\[[^\]]+\]\([^)]+\)/,
+    /`[^`]+`/,
+]
+
+const codeSignals = [
+    /;\s*$/,
+    /{[\s\S]*}/,
+    /^\s*(def|func|function|class|public|private|const|let|var|if|for|while|switch|package|import)\b/m,
+    /^\s*(#include|using namespace|fn |SELECT |WITH )/m,
+]
+
+const formatAnswerAsMarkdown = (answer: string, answerLanguage?: string) => {
+    const trimmed = answer.trim()
+    if (!trimmed) return trimmed
+    if (trimmed.includes("```")) return trimmed
+
+    const isMarkdown = markdownSignals.some((pattern) => pattern.test(trimmed))
+    if (isMarkdown) return trimmed
+
+    const isCode = codeSignals.some((pattern) => pattern.test(trimmed))
+    if (!isCode && !answerLanguage) return trimmed
+
+    const language = (answerLanguage || "").trim().toLowerCase()
+    return `\`\`\`${language}\n${trimmed}\n\`\`\``
 }
 
 export const useCreateProblem = () => {
@@ -38,7 +70,8 @@ export const useCreateProblem = () => {
                 difficulty: data.difficulty ? data.difficulty.toUpperCase() : 'EASY',
                 summary: data.summary,
                 description: data.description || '',
-                answer: data.answer,
+                answer: formatAnswerAsMarkdown(data.answer, data.answerLanguage),
+                answer_language: data.answerLanguage || null,
                 hints: data.hints || '',
             }
 

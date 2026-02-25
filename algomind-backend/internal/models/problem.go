@@ -14,6 +14,7 @@ type Problem struct {
 	Summary     string  `db:"summary" json:"summary"`
 	Description *string `db:"description" json:"description"`
 	Answer      string  `db:"answer" json:"answer"`
+	AnswerLang  *string `db:"answer_language" json:"answer_language"`
 	Hints       *string `db:"hints" json:"hints"`
 
 	CreatedAt time.Time `db:"created_at" json:"created_at"`

@@ -7,6 +7,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Eye, Lightbulb, Loader2 } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 // Helper for color coding difficulty
 const difficultyColor = (diff: string) => {
@@ -93,8 +95,45 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                             <Eye className="w-4 h-4 mr-2" /> Reveal Answer
                         </Button>
                     ) : (
-                        <div className="prose dark:prose-invert w-full">
-                            <p className="whitespace-pre-wrap">{problem.answer}</p>
+                        <div className="w-full rounded-md border bg-card text-foreground p-4 max-h-72 overflow-y-auto">
+                            {problem.answer_language ? (
+                                <div className="mb-3 inline-flex rounded border bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground not-prose">
+                                    {problem.answer_language}
+                                </div>
+                            ) : null}
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    p({ children }) {
+                                        return <p className="mb-3 leading-7 text-foreground">{children}</p>
+                                    },
+                                    ul({ children }) {
+                                        return <ul className="mb-3 list-disc pl-6">{children}</ul>
+                                    },
+                                    ol({ children }) {
+                                        return <ol className="mb-3 list-decimal pl-6">{children}</ol>
+                                    },
+                                    li({ children }) {
+                                        return <li className="mb-1 text-foreground">{children}</li>
+                                    },
+                                    code({ className, children, ...props }) {
+                                        return (
+                                            <code className={cn("rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground", className)} {...props}>
+                                                {children}
+                                            </code>
+                                        )
+                                    },
+                                    pre({ children }) {
+                                        return (
+                                            <pre className="rounded-md border bg-muted/40 text-foreground p-4 overflow-x-auto text-sm leading-6">
+                                                {children}
+                                            </pre>
+                                        )
+                                    },
+                                }}
+                            >
+                                {problem.answer}
+                            </ReactMarkdown>
                         </div>
                     )}
                 </div>

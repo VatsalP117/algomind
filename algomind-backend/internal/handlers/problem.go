@@ -49,10 +49,11 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 			summary,
 			description,
 			answer,
+			answer_language,
 			hints,
 			created_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()
 		)
 		RETURNING id
 	`
@@ -68,6 +69,7 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		req.Summary,
 		req.Description,
 		req.Answer,
+		req.AnswerLanguage,
 		req.Hints,
 	).Scan(&problemID); err != nil {
 		log.Printf("Database error creating problem for user %s, title '%s': %v", userID, req.Title, err)

@@ -13,6 +13,7 @@ type ReviewQueueItem struct {
 	Summary      *string `db:"summary" json:"summary,omitempty"`
 	Description  *string `db:"description" json:"description,omitempty"`
 	Answer       *string `db:"answer" json:"answer,omitempty"`
+	AnswerLang   *string `db:"answer_language" json:"answer_language,omitempty"`
 	Hints        *string `db:"hints" json:"hints,omitempty"`
 
 	// Concept fields (nullable)

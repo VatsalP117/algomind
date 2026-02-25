@@ -8,6 +8,7 @@ export type ReviewProblem = {
     description: string;
     difficulty: string;
     answer: string;
+    answer_language?: string;
     hints: string;
 };
 

@@ -25,8 +25,26 @@ type FormFields = {
     summary: string;
     description: string;
     answer: string;
+    answerLanguage: string;
     hints: string;
 }
+
+const answerLanguageOptions = [
+    { value: "python", label: "Python" },
+    { value: "cpp", label: "C++" },
+    { value: "java", label: "Java" },
+    { value: "javascript", label: "JavaScript" },
+    { value: "typescript", label: "TypeScript" },
+    { value: "go", label: "Go" },
+    { value: "rust", label: "Rust" },
+    { value: "c", label: "C" },
+    { value: "csharp", label: "C#" },
+    { value: "kotlin", label: "Kotlin" },
+    { value: "swift", label: "Swift" },
+    { value: "sql", label: "SQL" },
+    { value: "bash", label: "Bash" },
+    { value: "other", label: "Other" },
+]
 
 // Check if URL is a LeetCode problem URL
 function isLeetCodeUrl(url: string): boolean {
@@ -44,7 +62,11 @@ function cleanLeetCodeUrl(url: string): string {
 }
 
 export default function SubmitProblemForm() {
-    const form = useForm<FormFields>()
+    const form = useForm<FormFields>({
+        defaultValues: {
+            answerLanguage: "other",
+        },
+    })
     const { data: concepts } = useConcepts()
     const { register, handleSubmit, formState, setValue, watch, reset: resetFormState } = form
     const { errors, isSubmitting } = formState
@@ -80,7 +102,14 @@ export default function SubmitProblemForm() {
 
     const onSubmit = (data: FormFields) => {
         const conceptId = data.concept && data.concept !== "none" ? parseInt(data.concept) : null
-        mutateAsync({ ...data, conceptId: conceptId, difficulty: data.difficulty || 'EASY' })
+        const answerLanguage = data.answerLanguage === "other" ? undefined : data.answerLanguage
+
+        mutateAsync({
+            ...data,
+            answerLanguage,
+            conceptId: conceptId,
+            difficulty: data.difficulty || 'EASY'
+        })
         resetFormState()
     }
 
@@ -225,11 +254,39 @@ export default function SubmitProblemForm() {
                             {...register("answer", {
                                 required: "Answer is required",
                             })}
-                            placeholder="Add the answer to this problem."
+                            placeholder="Write explanation in markdown, or paste code directly."
                             rows={8}
                         />
                         <p className="text-xs text-red-500">
                             {form.formState.errors.answer?.message}
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="answerLanguage">Answer Language (Optional)</Label>
+                        <Controller
+                            control={form.control}
+                            name="answerLanguage"
+                            render={({ field }) => (
+                                <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                >
+                                    <SelectTrigger id="answerLanguage">
+                                        <SelectValue placeholder="Select answer language" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {answerLanguageOptions.map((language) => (
+                                            <SelectItem key={language.value} value={language.value}>
+                                                {language.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Pick a language for better code formatting. Choose Other for default behavior.
                         </p>
                     </div>
                 </CardContent>

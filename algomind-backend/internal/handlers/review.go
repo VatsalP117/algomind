@@ -39,6 +39,7 @@ func (h *ReviewHandler) GetQueue(c echo.Context) error {
 	p.summary     AS summary,
 	p.description AS description,
 	p.answer      AS answer,
+	p.answer_language AS answer_language,
 	p.hints       AS hints,
 
 	-- Concept fields
