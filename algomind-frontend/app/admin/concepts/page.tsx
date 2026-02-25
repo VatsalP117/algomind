@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import axios from 'axios'
+import axios from 'axios' // Import axios directly for this custom endpoint
 
-
+// UI Imports (adjust path to your shadcn components)
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/form'
 import { useAuth } from '@clerk/nextjs'
 
+// --- Schema Definition ---
 const formSchema = z.object({
     title: z.string().min(1, 'Title is required'),
     description: z.string().min(1, 'Description is required'),
@@ -31,14 +32,14 @@ export default function AdminCreateConceptPage() {
         'idle' | 'loading' | 'success' | 'error'
     >('idle')
     const [responseMsg, setResponseMsg] = useState('')
-    const { getToken } = useAuth()
+    const { getToken } = useAuth() // If you need auth for this endpoint
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: '',
             description: '',
-            content: '',
+            content: '', // This will be your big Markdown text
         },
     })
 
@@ -47,14 +48,17 @@ export default function AdminCreateConceptPage() {
         setResponseMsg('')
 
         try {
+            // 1. Get Token (Optional: remove if your /internal endpoint is public)
             const token = await getToken()
 
+            // 2. Direct POST to the specific URL you gave
             await axios.post(
                 'http://localhost:8080/internal/concepts',
                 values,
                 {
                     headers: {
                         'Content-Type': 'application/json',
+                        // Uncomment if your endpoint needs auth:
                         Authorization: `Bearer ${token}`,
                     },
                 },
@@ -62,7 +66,7 @@ export default function AdminCreateConceptPage() {
 
             setStatus('success')
             setResponseMsg('Concept created successfully!')
-            form.reset()
+            form.reset() // Clear form for the next one
         } catch (error: any) {
             console.error(error)
             setStatus('error')
@@ -87,6 +91,7 @@ export default function AdminCreateConceptPage() {
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-6"
                     >
+                        {/* Title */}
                         <FormField
                             control={form.control}
                             name="title"
@@ -104,6 +109,7 @@ export default function AdminCreateConceptPage() {
                             )}
                         />
 
+                        {/* Description */}
                         <FormField
                             control={form.control}
                             name="description"
@@ -121,6 +127,7 @@ export default function AdminCreateConceptPage() {
                             )}
                         />
 
+                        {/* Content (Markdown) */}
                         <FormField
                             control={form.control}
                             name="content"
@@ -143,6 +150,7 @@ export default function AdminCreateConceptPage() {
                             )}
                         />
 
+                        {/* Status Messages */}
                         {status === 'success' && (
                             <div className="p-3 bg-green-100 text-green-700 rounded-md border border-green-200">
                                 {responseMsg}

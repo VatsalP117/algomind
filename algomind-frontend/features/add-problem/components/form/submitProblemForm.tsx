@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { useCreateProblem } from "@/features/add-problem/api/useCreateProblem"
+import { useCreateItem } from "@/features/add-problem/api/useCreateItem"
 import { useFetchLeetCode } from "@/features/add-problem/api/useFetchLeetCode"
 import { Loader2, Sparkles, CheckCircle, ChevronDown, ChevronUp, Eye } from "lucide-react"
 import { toast } from "react-hot-toast"
@@ -28,10 +28,12 @@ type FormFields = {
     hints: string;
 }
 
+// Check if URL is a LeetCode problem URL
 function isLeetCodeUrl(url: string): boolean {
     return url.includes('leetcode.com/problems/')
 }
 
+// Strip query params and hash from URL
 function cleanLeetCodeUrl(url: string): string {
     try {
         const parsed = new URL(url)
@@ -44,22 +46,28 @@ function cleanLeetCodeUrl(url: string): string {
 export default function SubmitProblemForm() {
     const form = useForm<FormFields>()
     const { data: concepts } = useConcepts()
-    const { register, handleSubmit, formState, setValue, watch, reset: resetFormState } = form
-    const { isSubmitting } = formState
-    const { mutateAsync } = useCreateProblem()
+    const { register, handleSubmit, formState, setValue, watch } = form
+    const { errors, isSubmitting } = formState
+    const { mutateAsync } = useCreateItem()
     const { mutate: fetchLeetCode, isPending: isFetching, isSuccess: isFetched } = useFetchLeetCode()
 
+    // Watch the problem link field
     const problemLink = watch("problemLink")
 
+    // Auto-fetch when a LeetCode URL is pasted
     useEffect(() => {
         if (problemLink && isLeetCodeUrl(problemLink)) {
+            // Debounce the fetch slightly to avoid multiple calls while typing
             const timer = setTimeout(() => {
+                // Clean the URL before fetching (strip query params)
                 const cleanUrl = cleanLeetCodeUrl(problemLink)
                 fetchLeetCode(cleanUrl, {
                     onSuccess: (data) => {
+                        // Auto-fill the form fields
                         setValue("title", data.title)
                         setValue("description", data.description)
                         setValue("difficulty", data.difficulty)
+                        // Set summary to the first line of description or problem title
                         const summaryText = data.title
                         setValue("summary", summaryText)
                         toast.success(`Fetched details for "${data.title}"`)
@@ -73,13 +81,13 @@ export default function SubmitProblemForm() {
     const onSubmit = (data: FormFields) => {
         const conceptId = data.concept && data.concept !== "none" ? parseInt(data.concept) : null
         mutateAsync({ ...data, conceptId: conceptId, difficulty: data.difficulty || 'EASY' })
-        resetFormState()
     }
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Card>
                 <CardContent className="space-y-6">
+                    {/* Problem Link Field - Now at the top */}
                     <div className="space-y-2">
                         <Label htmlFor="problemLink">
                             Problem Link
@@ -123,7 +131,7 @@ export default function SubmitProblemForm() {
                         </p>
                     </div>
 
-                    {/* <div className="space-y-2">
+                    <div className="space-y-2">
                         <Label htmlFor="summary">
                             Problem Summary
                         </Label>
@@ -136,7 +144,7 @@ export default function SubmitProblemForm() {
                         <p className="text-xs text-red-500">
                             {form.formState.errors.summary?.message}
                         </p>
-                    </div> */}
+                    </div>
 
                     <DescriptionField
                         register={register}
@@ -175,7 +183,7 @@ export default function SubmitProblemForm() {
                                 render={({ field }) => (
                                     <Select
                                         onValueChange={field.onChange}
-                                        value={field.value}
+                                        defaultValue={field.value}
                                     >
                                         <SelectTrigger id="conceptId">
                                             <SelectValue placeholder="Select a concept" />
@@ -194,7 +202,7 @@ export default function SubmitProblemForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="hints">Notes/Hints (Optional)</Label>
+                        <Label htmlFor="hints">Hints (Optional)</Label>
                         <Textarea
                             {...register("hints")}
                             placeholder="Add any additional notes, hints, or key insights about this problem..."
@@ -229,6 +237,7 @@ export default function SubmitProblemForm() {
     )
 }
 
+// Component for description field with HTML preview
 function DescriptionField({
     register,
     description

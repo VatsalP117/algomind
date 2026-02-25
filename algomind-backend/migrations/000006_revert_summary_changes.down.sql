@@ -1,0 +1,3 @@
+ALTER TABLE problems
+ALTER COLUMN description SET NOT NULL,
+ALTER COLUMN summary DROP NOT NULL;

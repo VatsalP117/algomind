@@ -11,8 +11,8 @@ type Problem struct {
 	Link       *string `db:"link" json:"link"`
 	Difficulty string  `db:"difficulty" json:"difficulty"`
 
-	Summary     *string `db:"summary" json:"summary"`
-	Description string  `db:"description" json:"description"`
+	Summary     string  `db:"summary" json:"summary"`
+	Description *string `db:"description" json:"description"`
 	Answer      string  `db:"answer" json:"answer"`
 	Hints       *string `db:"hints" json:"hints"`
 
