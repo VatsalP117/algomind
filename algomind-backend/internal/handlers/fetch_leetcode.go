@@ -146,7 +146,8 @@ func (h *LeetCodeHandler) FetchProblemDirectLeetCode(c echo.Context) error {
 	req.Header.Set("Referer", "https://leetcode.com")
 	req.Header.Set("User-Agent", "Mozilla/5.0")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
+	req = req.WithContext(c.Request().Context())
 	resp, err := client.Do(req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch from LeetCode")
