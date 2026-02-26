@@ -12,10 +12,17 @@ export type LeetCodeProblemData = {
 export const useFetchLeetCode = () => {
     return useMutation({
         mutationFn: async (url: string): Promise<LeetCodeProblemData> => {
-            const res = await api.get('/leetcode/fetch', {
-                params: { url }
-            })
-            return res.data
+            try {
+                const res = await api.get('/leetcode/fetch/direct', {
+                    params: { url }
+                })
+                return res.data
+            } catch (error) {
+                const res = await api.get('/leetcode/fetch', {
+                    params: { url }
+                })
+                return res.data
+            }
         },
         onError: (error: any) => {
             const message = error.response?.data?.message || 'Failed to fetch LeetCode problem'

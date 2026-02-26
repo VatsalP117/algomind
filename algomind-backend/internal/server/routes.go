@@ -35,6 +35,7 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	api.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
 
 	api.GET("/leetcode/fetch", leetcodeHandler.FetchProblem)
+	api.GET("/leetcode/fetch/direct", leetcodeHandler.FetchProblemDirectLeetCode)
 
 	api.GET("/metrics/dashboard", metricsHandler.GetDashboard)
 	api.GET("/metrics/recall", metricsHandler.GetRecallQuality)
