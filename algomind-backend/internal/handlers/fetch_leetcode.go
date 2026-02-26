@@ -7,7 +7,9 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/VatsalP117/algomind/algomind-backend/internal/graphql"
 	"github.com/labstack/echo/v4"
 )
 
@@ -34,6 +36,22 @@ type FetchLeetCodeResponse struct {
 	Difficulty  string   `json:"difficulty"`
 	Description string   `json:"description"`
 	Tags        []string `json:"tags"`
+}
+
+type graphQLFetchProblemRequest struct {
+	Query     string                 `json:"query"`
+	Variables map[string]interface{} `json:"variables"`
+}
+
+type graphQLFetchProblemResponse struct {
+	Data struct {
+		Question struct {
+			Title      string     `json:"title"`
+			Difficulty string     `json:"difficulty"`
+			Content    string     `json:"content"`
+			TopicTags  []TopicTag `json:"topicTags"`
+		} `json:"question"`
+	} `json:"data"`
 }
 
 func extractTitleSlug(leetcodeURL string) (string, error) {
@@ -94,6 +112,72 @@ func (h *LeetCodeHandler) FetchProblem(c echo.Context) error {
 		Title:       problem.Title,
 		Difficulty:  problem.Difficulty,
 		Description: problem.Content,
+		Tags:        tags,
+	})
+}
+
+func (h *LeetCodeHandler) FetchProblemDirectLeetCode(c echo.Context) error {
+	urlParam := c.QueryParam("url")
+	if urlParam == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "url parameter is required")
+	}
+
+	titleSlug, err := extractTitleSlug(urlParam)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	// Prepare GraphQL request body
+	reqBody := graphQLFetchProblemRequest{
+		Query:     graphql.LeetCodeGraphQLQuery,
+		Variables: map[string]interface{}{"titleSlug": titleSlug},
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to prepare request")
+	}
+
+	req, err := http.NewRequest("POST", "https://leetcode.com/graphql", strings.NewReader(string(bodyBytes)))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Referer", "https://leetcode.com")
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	req = req.WithContext(c.Request().Context())
+	resp, err := client.Do(req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch from LeetCode")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return echo.NewHTTPError(http.StatusInternalServerError, "LeetCode API returned error")
+	}
+
+	var gqlResp graphQLFetchProblemResponse
+	if err := json.NewDecoder(resp.Body).Decode(&gqlResp); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to parse LeetCode response")
+	}
+
+	if gqlResp.Data.Question.Title == "" {
+		return echo.NewHTTPError(http.StatusNotFound, "problem not found")
+	}
+
+	// Convert topic tags
+	tags := make([]string, len(gqlResp.Data.Question.TopicTags))
+	for i, tag := range gqlResp.Data.Question.TopicTags {
+		tags[i] = tag.Name
+	}
+
+	return c.JSON(http.StatusOK, FetchLeetCodeResponse{
+		Title:       gqlResp.Data.Question.Title,
+		Difficulty:  gqlResp.Data.Question.Difficulty,
+		Description: gqlResp.Data.Question.Content,
 		Tags:        tags,
 	})
 }
