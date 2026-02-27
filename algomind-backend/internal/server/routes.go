@@ -19,12 +19,9 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	leetcodeHandler := handlers.NewLeetCodeHandler()
 
 	internalConceptHandler := handlers.NewInternalConceptHandler(db)
-	internalProblemHandler := handlers.NewInternalProblemHandler(db)
 	internal := e.Group("/internal")
 	internal.Use(authMiddleware.RequireAuth)
 	internal.POST("/concepts", internalConceptHandler.CreateConcept)
-	internal.GET("/problems", internalProblemHandler.GetAllProblems)
-
 	api := e.Group("/api/v1")
 	api.Use(authMiddleware.RequireAuth)
 	api.GET("/profile", userHandler.GetProfile)
