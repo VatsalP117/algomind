@@ -29,13 +29,13 @@ export function ProblemList({ problems, isLoading }: ProblemListProps) {
 
     const getDifficultyColor = (difficulty: string) => {
         switch (difficulty) {
-            case 'Easy': return 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 shadow-none border-0';
-            case 'Medium': return 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 shadow-none border-0';
-            case 'Hard': return 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 shadow-none border-0';
+            case 'EASY': return 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 shadow-none border-0';
+            case 'MEDIUM': return 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 shadow-none border-0';
+            case 'HARD': return 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 shadow-none border-0';
             default: return 'bg-slate-500/10 text-slate-500';
         }
     };
-
+    console.log('problems', problems[0].date_added)
     return (
         <div className="space-y-4">
             {problems.map((problem) => (
@@ -48,21 +48,14 @@ export function ProblemList({ problems, isLoading }: ProblemListProps) {
                                     {problem.difficulty}
                                 </Badge>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {problem.tags.map(tag => (
-                                    <Badge key={tag} variant="secondary" className="text-xs bg-muted text-muted-foreground font-normal border-0">
-                                        {tag}
-                                    </Badge>
-                                ))}
-                            </div>
+                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground font-normal border-0">
+                                {problem.tag}
+                            </Badge>
                         </div>
                         <div className="flex sm:flex-col items-center sm:items-end gap-3 text-sm text-muted-foreground w-full sm:w-auto">
-                            <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="font-medium text-foreground">{problem.platform}</span>
-                            </div>
                             <div className="flex items-center gap-1.5 whitespace-nowrap ml-auto sm:ml-0 text-xs">
                                 <Calendar className="w-3.5 h-3.5" />
-                                <span>Added {problem.dateAdded}</span>
+                                <span>Added {problem.date_added.split('T')[0]}</span>
                             </div>
                         </div>
                     </CardContent>

@@ -28,6 +28,7 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	api.GET("/concepts", conceptHandler.ListConcepts)
 
 	api.POST("/problems", problemHandler.CreateProblem)
+	api.GET("/problems", problemHandler.GetAllUserProblems)
 	api.GET("/reviews/queue", reviewHandler.GetQueue)
 	api.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
 

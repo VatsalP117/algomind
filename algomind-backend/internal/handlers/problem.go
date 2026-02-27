@@ -116,3 +116,30 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		"id": problemID,
 	})
 }
+
+func (h *ProblemHandler) GetAllUserProblems(c echo.Context) error {
+	log.Printf("Received request to get all user problems")
+	userId := c.Get("user_id").(string)
+	ctx := c.Request().Context()
+
+	fetchUserProblemsQuery := `
+		SELECT 
+			p.id,
+			p.title,
+			p.difficulty,
+			c.title AS tag,
+			p.created_at
+		FROM problems p
+		LEFT JOIN concepts c ON p.concept_id = c.id
+		WHERE p.user_id = $1
+	`
+	var problems []dto.UserProblemsResponse
+	if err := h.DB.Db.SelectContext(ctx, &problems, fetchUserProblemsQuery, userId); err != nil {
+		log.Printf("Database error fetching user problems for user %s: %v", userId, err)
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to fetch user problems",
+		)
+	}
+	return c.JSON(http.StatusOK, problems)
+}

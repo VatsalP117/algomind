@@ -9,23 +9,22 @@ export function LibraryView() {
     const { data: problems = [], isLoading } = useGetProblems();
 
     const [search, setSearch] = useState('');
-    const [difficulty, setDifficulty] = useState<Difficulty | 'All'>('All');
-    const [tag, setTag] = useState<string>('All');
+    const [difficulty, setDifficulty] = useState<Difficulty | 'ALL'>('ALL');
+    const [tag, setTag] = useState<string>('ALL');
 
-    // Extract all unique tags for the filter dropdown
     const availableTags = useMemo(() => {
         const tags = new Set<string>();
-        problems.forEach(p => p.tags.forEach(t => tags.add(t)));
+        problems.forEach(p => tags.add(p.tag));
         return Array.from(tags).sort();
-    }, [problems]);
-
-    // Derived state determining the filtered items
+    }, [problems])
+    console.log('difficulty', difficulty)
     const filteredProblems = useMemo(() => {
         return problems.filter(problem => {
             const matchesSearch = problem.title.toLowerCase().includes(search.toLowerCase());
-            const matchesDifficulty = difficulty === 'All' || problem.difficulty === difficulty;
-            const matchesTag = tag === 'All' || problem.tags.includes(tag);
-
+            const matchesDifficulty = difficulty === 'ALL' || problem.difficulty === difficulty;
+            const matchesTag = tag === 'ALL' || problem.tag === tag;
+            console.log("debug", problem.difficulty, difficulty)
+            console.log(matchesSearch, matchesDifficulty, matchesTag)
             return matchesSearch && matchesDifficulty && matchesTag;
         });
     }, [problems, search, difficulty, tag]);

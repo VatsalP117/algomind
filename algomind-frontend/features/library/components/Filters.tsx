@@ -6,8 +6,8 @@ import { Difficulty } from '../api/useGetProblems';
 interface FiltersProps {
     search: string;
     setSearch: (s: string) => void;
-    difficulty: Difficulty | 'All';
-    setDifficulty: (d: Difficulty | 'All') => void;
+    difficulty: Difficulty | 'ALL';
+    setDifficulty: (d: Difficulty | 'ALL') => void;
     tag: string;
     setTag: (t: string) => void;
     availableTags: string[];
@@ -26,15 +26,15 @@ export function Filters({ search, setSearch, difficulty, setDifficulty, tag, set
                 />
             </div>
 
-            <Select value={difficulty} onValueChange={(val) => setDifficulty(val as Difficulty | 'All')}>
+            <Select value={difficulty} onValueChange={(val) => setDifficulty(val as Difficulty | 'ALL')}>
                 <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Difficulty" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="All">All</SelectItem>
-                    <SelectItem value="Easy">Easy</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Hard">Hard</SelectItem>
+                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="EASY">Easy</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                    <SelectItem value="HARD">Hard</SelectItem>
                 </SelectContent>
             </Select>
 
@@ -43,7 +43,7 @@ export function Filters({ search, setSearch, difficulty, setDifficulty, tag, set
                     <SelectValue placeholder="Tags" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="All">All Tags</SelectItem>
+                    <SelectItem value="ALL">All Tags</SelectItem>
                     {availableTags.map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
