@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import React from 'react'
 
 export const metadata: Metadata = {
     robots: {
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
     },
 }
 
-export default function AuthLayout({
+export default function SsoCallbackLayout({
     children,
 }: {
     children: React.ReactNode

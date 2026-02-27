@@ -12,20 +12,28 @@ export function LandingNav() {
     const { isSignedIn } = useAuth()
     const router = useRouter()
 
-    const handleAuthAction = () => {
-        if (isSignedIn) {
-            router.push('/dashboard')
-        }
-    }
-
     return (
         <nav className="fixed top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-2">
+                <Link href="/" className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                         <Brain className="h-4 w-4" />
                     </div>
                     <span className="text-lg font-bold tracking-tight">Algomind</span>
+                </Link>
+                <div className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
+                    <Link href="/#science" className="transition-colors hover:text-foreground">
+                        Science
+                    </Link>
+                    <Link href="/#how-it-works" className="transition-colors hover:text-foreground">
+                        How it works
+                    </Link>
+                    <Link href="/resources" className="transition-colors hover:text-foreground">
+                        Resources
+                    </Link>
+                    <Link href="/#faq" className="transition-colors hover:text-foreground">
+                        FAQ
+                    </Link>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button

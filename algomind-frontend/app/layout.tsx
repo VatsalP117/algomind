@@ -6,6 +6,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import Providers from "@/components/providers";
 import { AnalyticsComponent } from '@/components/AnalyticsComponent'
+import { siteConfig } from '@/lib/seo'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -18,8 +19,54 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-    title: 'Algomind',
-    description: 'Learn and retain algorithms with ease',
+    metadataBase: new URL(siteConfig.url),
+    title: {
+        default: siteConfig.name,
+        template: `%s | ${siteConfig.name}`,
+    },
+    description: siteConfig.description,
+    applicationName: siteConfig.name,
+    keywords: siteConfig.keywords,
+    creator: siteConfig.name,
+    publisher: siteConfig.name,
+    openGraph: {
+        type: 'website',
+        locale: 'en_US',
+        url: siteConfig.url,
+        siteName: siteConfig.name,
+        title: siteConfig.name,
+        description: siteConfig.description,
+        images: [
+            {
+                url: siteConfig.ogImage,
+                width: 1200,
+                height: 630,
+                alt: `${siteConfig.name} — Spaced repetition for algorithm mastery`,
+            },
+        ],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: siteConfig.name,
+        description: siteConfig.description,
+        images: [siteConfig.ogImage],
+    },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+            'max-video-preview': -1,
+        },
+    },
+    formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+    },
 }
 
 export default function RootLayout({
@@ -28,12 +75,12 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <ClerkProvider>
-            <Providers>
-                <html lang="en" suppressHydrationWarning>
-                    <body
-                        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-                    >
+        <html lang="en" suppressHydrationWarning>
+            <body
+                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+            >
+                <ClerkProvider>
+                    <Providers>
                         <ThemeProvider
                             attribute="class"
                             defaultTheme="system"
@@ -44,9 +91,9 @@ export default function RootLayout({
                             {children}
                             <AnalyticsComponent />
                         </ThemeProvider>
-                    </body>
-                </html>
-            </Providers>
-        </ClerkProvider>
+                    </Providers>
+                </ClerkProvider>
+            </body>
+        </html>
     )
 }

@@ -112,6 +112,7 @@ Deployed on a Linux VPS using [Dokploy](https://dokploy.com), which handles Dock
 **Environment variables required at build time** (baked into the Next.js bundle):
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+NEXT_PUBLIC_SITE_URL
 NEXT_PUBLIC_CLERK_SIGN_IN_URL
 NEXT_PUBLIC_CLERK_SIGN_UP_URL
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL

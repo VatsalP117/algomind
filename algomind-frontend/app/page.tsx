@@ -1,15 +1,149 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Brain, BookOpen, Zap, BarChart3, CheckCircle, Clock, TrendingUp } from 'lucide-react'
 import { LandingNav } from '@/components/shared/landing-nav'
 import { ForgettingCurveChart } from '@/components/shared/forgetting-curve-chart'
 import { HeroCTA } from '@/components/shared/hero-cta'
+import { siteConfig } from '@/lib/seo'
 
+export const metadata: Metadata = {
+  title: 'Spaced Repetition for Algorithm Interview Prep',
+  description:
+    'Algomind helps software engineers retain LeetCode problems and algorithm concepts using adaptive spaced repetition.',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'Algomind: Retain Algorithms with Spaced Repetition',
+    description:
+      'Stop forgetting solved problems. Build long-term algorithm mastery with smart review scheduling.',
+    url: '/',
+    images: [siteConfig.ogImage],
+  },
+  twitter: {
+    title: 'Algomind: Retain Algorithms with Spaced Repetition',
+    description:
+      'Adaptive spaced repetition for coding interview prep and long-term algorithm memory.',
+    images: [siteConfig.ogImage],
+  },
+}
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: siteConfig.name,
+  url: siteConfig.url,
+  description: siteConfig.description,
+}
+
+const faqItems = [
+  {
+    question: 'What is spaced repetition for coding interviews?',
+    answer:
+      'Spaced repetition is a study method that schedules review sessions right before you are likely to forget. For interview prep, that means revisiting solved algorithm problems at adaptive intervals so patterns stay usable under pressure.',
+  },
+  {
+    question: 'How is Algomind different from random LeetCode practice?',
+    answer:
+      'Random practice optimizes for volume. Algomind optimizes for retention by tracking your recall quality and scheduling each problem with an SM-2 style interval so important patterns stay fresh.',
+  },
+  {
+    question: 'How much time does a daily review take?',
+    answer:
+      'Most learners complete their daily queue in under five minutes because reviews become less frequent as recall improves.',
+  },
+  {
+    question: 'Can I use Algomind even if I already solved many LeetCode problems?',
+    answer:
+      'Yes. Add previously solved problems and start a retention cycle immediately. The system will prioritize what is most likely to be forgotten first.',
+  },
+]
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.answer,
+    },
+  })),
+}
+
+const howToJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to retain LeetCode problems with spaced repetition',
+  description:
+    'A lightweight daily workflow for long-term algorithm retention before coding interviews.',
+  totalTime: 'PT5M',
+  step: [
+    {
+      '@type': 'HowToStep',
+      name: 'Import solved problems',
+      text: 'Add solved LeetCode problems and map each one to a core concept.',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Write compact notes',
+      text: 'Capture the key pattern, edge cases, and your final solution reasoning.',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Complete due reviews',
+      text: 'Review the due queue and rate recall as Again, Hard, Good, or Easy.',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Repeat daily',
+      text: 'Let intervals expand automatically and maintain retention with minimal daily effort.',
+    },
+  ],
+}
+
+const applicationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: siteConfig.name,
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Web',
+  description: siteConfig.description,
+  url: siteConfig.url,
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  featureList: [
+    'LeetCode problem tracking',
+    'SM-2 based spaced repetition',
+    'Daily review queue',
+    'Concept mastery dashboard',
+  ],
+}
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(applicationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
+      />
       <LandingNav />
 
       {/* Hero */}
@@ -50,7 +184,7 @@ export default function LandingPage() {
       </section>
 
       {/* The Problem: Forgetting Curve */}
-      <section className="border-t border-border px-6 py-24">
+      <section id="science" className="border-t border-border px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
             <div>
@@ -94,7 +228,7 @@ export default function LandingPage() {
       </section>
 
       {/* The Solution: Spaced Repetition */}
-      <section className="border-t border-border bg-muted/30 px-6 py-24">
+      <section id="how-it-works" className="border-t border-border bg-muted/30 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
             {/* SR intervals diagram */}
@@ -153,6 +287,104 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-background px-6 py-24">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-10 text-center">
+            <Badge variant="outline" className="mb-4">Interview Workflow</Badge>
+            <h2 className="text-4xl font-bold tracking-tight">
+              LeetCode spaced repetition workflow for interview readiness
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Use a repeatable process to convert solved problems into long-term coding interview memory.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <h3 className="text-xl font-semibold">Daily retention loop</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Add solved problems, review due cards, and grade recall honestly. This keeps core patterns like binary search, sliding window, and graph traversal available when interviews demand speed.
+              </p>
+              <Link
+                href="/resources/leetcode-spaced-repetition-guide"
+                className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+              >
+                Read the LeetCode retention guide
+              </Link>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <h3 className="text-xl font-semibold">SM-2 interval strategy</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                The review interval expands when recall is strong and contracts when recall is weak, so time is spent on what is actually at risk of being forgotten.
+              </p>
+              <Link
+                href="/resources/spaced-repetition-coding-interviews"
+                className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+              >
+                Learn the spaced repetition method
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="guides" className="border-t border-border bg-muted/30 px-6 py-24">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 text-center">
+            <Badge variant="outline" className="mb-4">Resources</Badge>
+            <h2 className="text-4xl font-bold tracking-tight">
+              Free algorithm retention guides
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Explore practical guides on spaced repetition, LeetCode review systems, and interview memory retention.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Link
+              href="/resources/spaced-repetition-coding-interviews"
+              className="rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-sm"
+            >
+              <h3 className="text-xl font-semibold">Spaced repetition for coding interviews</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Understand the forgetting curve, interval scheduling, and how to retain algorithm patterns for months.
+              </p>
+            </Link>
+            <Link
+              href="/resources/leetcode-spaced-repetition-guide"
+              className="rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-sm"
+            >
+              <h3 className="text-xl font-semibold">LeetCode spaced repetition guide</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                A step-by-step system to turn solved LeetCode problems into durable interview recall.
+              </p>
+            </Link>
+          </div>
+          <div className="mt-10 text-center">
+            <Link href="/resources" className="text-sm font-medium text-primary hover:underline">
+              Browse all interview prep resources
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" className="border-t border-border px-6 py-24">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-12 text-center">
+            <Badge variant="outline" className="mb-4">FAQ</Badge>
+            <h2 className="text-4xl font-bold tracking-tight">
+              Spaced repetition and LeetCode retention FAQ
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {faqItems.map((item) => (
+              <div key={item.question} className="rounded-2xl border border-border bg-card p-6">
+                <h3 className="text-lg font-semibold">{item.question}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -233,14 +465,23 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Brain className="h-4 w-4" />
             <span>Algomind</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Built on the science of memory
-          </p>
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <Link href="/resources" className="hover:text-foreground">
+              Resources
+            </Link>
+            <Link href="/resources/spaced-repetition-coding-interviews" className="hover:text-foreground">
+              Spaced Repetition Guide
+            </Link>
+            <Link href="/resources/leetcode-spaced-repetition-guide" className="hover:text-foreground">
+              LeetCode Retention Guide
+            </Link>
+            <span>Built on the science of memory</span>
+          </div>
         </div>
       </footer>
     </div>
