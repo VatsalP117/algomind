@@ -2,6 +2,7 @@ import { Problem } from '../api/useGetProblems';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from 'lucide-react';
+import DifficultyBadge from './DifficultyBadge';
 
 interface ProblemListProps {
     problems: Problem[];
@@ -44,9 +45,7 @@ export function ProblemList({ problems, isLoading }: ProblemListProps) {
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
                                 <h3 className="font-semibold text-base sm:text-lg">{problem.title}</h3>
-                                <Badge className={getDifficultyColor(problem.difficulty)}>
-                                    {problem.difficulty}
-                                </Badge>
+                                <DifficultyBadge difficulty={problem.difficulty} />
                             </div>
                             <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground font-normal border-0">
                                 {problem.tag}
