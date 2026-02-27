@@ -29,6 +29,10 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 
 	api.POST("/problems", problemHandler.CreateProblem)
 	api.GET("/problems", problemHandler.GetAllUserProblems)
+	api.GET("/problems/:problem_id", problemHandler.GetIndividualUserProblem)
+	api.DELETE("/problems/:problem_id", problemHandler.DeleteProblem)
+	api.POST("/problems/add-to-review-queue/:problem_id", problemHandler.AddProblemToReviewQueue)
+
 	api.GET("/reviews/queue", reviewHandler.GetQueue)
 	api.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
 

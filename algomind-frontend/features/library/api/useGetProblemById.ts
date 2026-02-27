@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Problem } from './useGetProblems';
 
 export interface ProblemDetail extends Problem {
-    description?: string;
-    answer?: string;
+    description: string;
+    answer: string;
     answer_language?: string;
     summary?: string;
     hints?: string;
@@ -27,12 +27,6 @@ export const useGetProblemById = (id: string) => {
     return useQuery({
         queryKey: ['problem', id],
         queryFn: async () => {
-            // Simulate API interaction for now over picking real ID
-            if (id === '1' || process.env.NODE_ENV === "development") {
-                await new Promise((resolve) => setTimeout(resolve, 500));
-                return { ...mockProblemDetail, id };
-            }
-
             const response = await api.get<ProblemDetail>(`/problems/${id}`);
             return response.data;
         },

@@ -20,3 +20,11 @@ type UserProblemsResponse struct {
 	Tag        string `json:"tag" db:"tag"`
 	DateAdded  string `json:"date_added" db:"created_at"`
 }
+
+type UserIndividualProblemResponse struct {
+	UserProblemsResponse
+	Description    string  `json:"description" db:"description"`
+	Answer         string  `json:"answer" db:"answer"`
+	AnswerLanguage *string `json:"answer_language" db:"answer_language"`
+	Hints          *string `json:"hints" db:"hints"`
+}

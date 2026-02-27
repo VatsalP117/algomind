@@ -9,6 +9,7 @@ import DifficultyBadge from './DifficultyBadge';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useAddProblemToReviewQueue } from '../api/useAddProblemToReviewQueue';
 
 interface ProblemDetailViewProps {
     id: string;
@@ -18,6 +19,7 @@ export function ProblemDetailView({ id }: ProblemDetailViewProps) {
     const router = useRouter();
     const { data: problem, isLoading } = useGetProblemById(id);
     const deleteMutation = useDeleteProblem();
+    const addToReviewQueueMutation = useAddProblemToReviewQueue();
 
     if (isLoading) {
         return (
@@ -45,8 +47,7 @@ export function ProblemDetailView({ id }: ProblemDetailViewProps) {
     };
 
     const handleAddToReview = () => {
-        // We'll mock out the review add later, for now we will just use a toast
-        alert("Added to review queue!");
+        addToReviewQueueMutation.mutate(id);
     };
 
     return (

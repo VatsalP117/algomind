@@ -143,3 +143,125 @@ func (h *ProblemHandler) GetAllUserProblems(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, problems)
 }
+
+func (h *ProblemHandler) GetIndividualUserProblem(c echo.Context) error {
+	log.Printf("Received request to get individual user problem")
+	problemId := c.Param("problem_id")
+	if problemId == "" {
+		return echo.NewHTTPError(
+			http.StatusBadRequest,
+			"problem ID is required",
+		)
+	}
+	userId := c.Get("user_id").(string)
+	ctx := c.Request().Context()
+
+	fetchUserProblemQuery := `
+		SELECT 
+			p.id,
+			p.title,
+			p.difficulty,
+			c.title AS tag,
+			p.created_at,
+			p.description,
+			p.answer,
+			p.answer_language,
+			p.hints
+		FROM problems p
+		LEFT JOIN concepts c ON p.concept_id = c.id
+		WHERE p.user_id = $1 AND p.id = $2
+	`
+	var problem dto.UserIndividualProblemResponse
+	if err := h.DB.Db.GetContext(ctx, &problem, fetchUserProblemQuery, userId, problemId); err != nil {
+		log.Printf("Database error fetching user problem for user %s, problem ID %s: %v", userId, problemId, err)
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to fetch user problem",
+		)
+	}
+	return c.JSON(http.StatusOK, problem)
+}
+
+func (h *ProblemHandler) DeleteProblem(c echo.Context) error {
+	log.Printf("Received request to delete problem")
+	problemId := c.Param("problem_id")
+	if problemId == "" {
+		return echo.NewHTTPError(
+			http.StatusBadRequest,
+			"problem ID is required",
+		)
+	}
+	userId := c.Get("user_id").(string)
+	ctx := c.Request().Context()
+
+	deleteProblemQuery := `
+		DELETE FROM problems
+		WHERE user_id = $1 AND id = $2
+	`
+	if _, err := h.DB.Db.ExecContext(ctx, deleteProblemQuery, userId, problemId); err != nil {
+		log.Printf("Database error deleting problem for user %s, problem ID %s: %v", userId, problemId, err)
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to delete problem",
+		)
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"id": problemId,
+	})
+}
+
+func (h *ProblemHandler) AddProblemToReviewQueue(c echo.Context) error {
+	log.Printf("Received request to add problem to review queue")
+
+	problemId := c.Param("problem_id")
+	if problemId == "" {
+		return echo.NewHTTPError(
+			http.StatusBadRequest,
+			"problem ID is required",
+		)
+	}
+
+	userId := c.Get("user_id").(string)
+	ctx := c.Request().Context()
+
+	query := `
+		INSERT INTO review_states (
+			user_id,
+			entity_type,
+			entity_id,
+			next_review_at,
+			interval_days,
+			ease_factor,
+			streak,
+			created_at
+		)
+		VALUES (
+			$1,
+			'problem',
+			$2,
+			$3,
+			0,
+			2.5,
+			0,
+			NOW()
+		)
+		ON CONFLICT (user_id, entity_type, entity_id)
+		DO UPDATE SET
+			next_review_at = EXCLUDED.next_review_at,
+			interval_days = 0,
+			ease_factor = 2.5
+	`
+
+	if _, err := h.DB.Db.ExecContext(ctx, query, userId, problemId, time.Now()); err != nil {
+
+		log.Printf("Database error upserting review state for user %s, problem ID %s: %v", userId, problemId, err)
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to add problem to review queue",
+		)
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"id": problemId,
+	})
+}
