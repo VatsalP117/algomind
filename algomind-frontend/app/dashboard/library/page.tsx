@@ -1,8 +1,8 @@
 'use client'
 
-import FeatureComingSoon from '@/components/shared/feature-coming-soon'
 import HeadingSection from '@/components/shared/heading-section'
 import { FeaturePagesHeaderInfo } from '@/constants/sidebar-links'
+import { LibraryView } from '@/features/library/components/LibraryView'
 
 export default function LibraryPage() {
     return (
@@ -14,7 +14,9 @@ export default function LibraryPage() {
                     />
                 </div>
             </div>
-            <FeatureComingSoon />
+            <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+                <LibraryView />
+            </div>
         </div>
     )
 }
