@@ -96,11 +96,10 @@ export function ProblemDetailView({ id }: ProblemDetailViewProps) {
             {problem.description && (
                 <div className="space-y-2">
                     <h2 className="text-lg font-semibold">Description</h2>
-                    <div className="prose dark:prose-invert max-w-none text-muted-foreground bg-muted/30 p-4 rounded-lg">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {problem.description}
-                        </ReactMarkdown>
-                    </div>
+                    <div
+                        className="prose dark:prose-invert max-w-none text-muted-foreground bg-muted/30 p-4 rounded-lg"
+                        dangerouslySetInnerHTML={{ __html: problem.description }}
+                    />
                 </div>
             )}
 
