@@ -37,7 +37,20 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	var problemID int64
+	tx, err := h.DB.Db.BeginTxx(ctx, nil)
+	if err != nil {
+		log.Printf("Database error starting transaction for user %s: %v", userID, err)
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to create problem",
+		)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
 
 	insertProblemQuery := `
 		INSERT INTO problems (
@@ -55,10 +68,11 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()
 		)
-		RETURNING id
-	`
+			RETURNING id
+		`
 
-	if err := h.DB.Db.QueryRowContext(
+	var problemID int64
+	if err := tx.QueryRowContext(
 		ctx,
 		insertProblemQuery,
 		userID,
@@ -96,7 +110,7 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		)
 	`
 
-	if _, err := h.DB.Db.ExecContext(
+	if _, err := tx.ExecContext(
 		ctx,
 		insertReviewStateQuery,
 		userID,
@@ -109,6 +123,15 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 			"failed to create review state",
 		)
 	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("Database error committing transaction for new problem ID %d, user %s: %v", problemID, userID, err)
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to create problem",
+		)
+	}
+	committed = true
 
 	log.Printf("Successfully created review state for problem ID %d", problemID)
 
