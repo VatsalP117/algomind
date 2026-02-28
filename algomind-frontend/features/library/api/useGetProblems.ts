@@ -1,5 +1,5 @@
 import { api } from '@/lib/api-client';
-import { useQuery } from '@tanstack/react-query';
+import { useAuthQuery } from '@/features/useAuthQuery';
 
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 
@@ -21,11 +21,9 @@ const mockProblems: Problem[] = [
 ];
 
 export const useGetProblems = () => {
-    return useQuery({
+    return useAuthQuery({
         queryKey: ['problems'],
         queryFn: async () => {
-            // await new Promise((resolve) => setTimeout(resolve, 500));
-            // return mockProblems;
             const response = await api.get<Problem[]>('/problems');
             return response.data ?? [];
         },

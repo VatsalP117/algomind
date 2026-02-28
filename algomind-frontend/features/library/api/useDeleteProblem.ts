@@ -13,6 +13,8 @@ export const useDeleteProblem = () => {
         onSuccess: () => {
             toast.success('Problem deleted successfully');
             queryClient.invalidateQueries({ queryKey: ['problems'] });
+            queryClient.invalidateQueries({ queryKey: ['metrics'] });
+            queryClient.invalidateQueries({ queryKey: ['review-problems'] });
         },
         onError: () => {
             toast.error('Failed to delete problem');
