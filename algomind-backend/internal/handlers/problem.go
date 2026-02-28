@@ -151,7 +151,7 @@ func (h *ProblemHandler) GetAllUserProblems(c echo.Context) error {
 			p.title,
 			p.difficulty,
 			c.title AS tag,
-			p.created_at
+			p.created_at::text AS created_at
 		FROM problems p
 		LEFT JOIN concepts c ON p.concept_id = c.id
 		WHERE p.user_id = $1
@@ -185,7 +185,7 @@ func (h *ProblemHandler) GetIndividualUserProblem(c echo.Context) error {
 			p.title,
 			p.difficulty,
 			c.title AS tag,
-			p.created_at,
+			p.created_at::text AS created_at,
 			p.description,
 			p.answer,
 			p.answer_language,
