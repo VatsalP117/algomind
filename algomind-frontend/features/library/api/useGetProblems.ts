@@ -27,7 +27,7 @@ export const useGetProblems = () => {
             // await new Promise((resolve) => setTimeout(resolve, 500));
             // return mockProblems;
             const response = await api.get<Problem[]>('/problems');
-            return response.data;
+            return response.data ?? [];
         },
     });
 };
