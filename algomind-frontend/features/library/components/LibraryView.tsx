@@ -17,14 +17,11 @@ export function LibraryView() {
         problems.forEach(p => tags.add(p.tag));
         return Array.from(tags).sort();
     }, [problems])
-    console.log('difficulty', difficulty)
     const filteredProblems = useMemo(() => {
         return problems.filter(problem => {
             const matchesSearch = problem.title.toLowerCase().includes(search.toLowerCase());
             const matchesDifficulty = difficulty === 'ALL' || problem.difficulty === difficulty;
             const matchesTag = tag === 'ALL' || problem.tag === tag;
-            console.log("debug", problem.difficulty, difficulty)
-            console.log(matchesSearch, matchesDifficulty, matchesTag)
             return matchesSearch && matchesDifficulty && matchesTag;
         });
     }, [problems, search, difficulty, tag]);
