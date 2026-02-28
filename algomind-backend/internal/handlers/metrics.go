@@ -32,15 +32,17 @@ func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 			COALESCE((SELECT current_streak FROM users 
 			 WHERE id = $1), 0) as current_streak,
 			
-			COALESCE((SELECT longest_streak FROM users 
-			 WHERE id = $1), 0) as longest_streak,
-			
-			(SELECT COUNT(*) FROM review_logs 
-			 WHERE user_id = $1 AND DATE(reviewed_at) = CURRENT_DATE) as reviews_today,
-			
-			(SELECT COUNT(*) FROM problems 
-			 WHERE user_id = $1) as total_problems
-	`
+				COALESCE((SELECT longest_streak FROM users 
+				 WHERE id = $1), 0) as longest_streak,
+				
+				(SELECT COUNT(*) FROM review_logs 
+				 WHERE user_id = $1
+				   AND reviewed_at >= CURRENT_DATE
+				   AND reviewed_at < CURRENT_DATE + INTERVAL '1 day') as reviews_today,
+				
+				(SELECT COUNT(*) FROM problems 
+				 WHERE user_id = $1) as total_problems
+		`
 
 	if err := h.DB.Db.GetContext(ctx, &summary, query, userID); err != nil {
 		fmt.Println("Dashboard metrics error:", err)
