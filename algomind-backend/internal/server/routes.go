@@ -55,4 +55,5 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	api.GET("/metrics/dashboard", metricsHandler.GetDashboard)
 	api.GET("/metrics/recall", metricsHandler.GetRecallQuality)
 	api.GET("/metrics/mastery", metricsHandler.GetTopicMastery)
+	api.GET("/metrics/most-used-language", metricsHandler.GetMostUsedLanguage)
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -173,4 +174,36 @@ func (h *MetricsHandler) GetTopicMastery(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, mastery)
+}
+
+func (h *MetricsHandler) GetMostUsedLanguage(c echo.Context) error {
+	userID := c.Get("user_id").(string)
+	ctx := c.Request().Context()
+
+	query := `
+		SELECT 
+			COALESCE(answer_language, '')
+		FROM problems
+		WHERE user_id = $1 AND answer_language IS NOT NULL AND answer_language != ''
+		GROUP BY answer_language
+		ORDER BY COUNT(*) DESC
+		LIMIT 1
+	`
+
+	var language string
+	if err := h.DB.Db.GetContext(ctx, &language, query, userID); err != nil {
+		if err == sql.ErrNoRows {
+			return c.JSON(http.StatusOK, map[string]interface{}{
+				"language": nil,
+			})
+		}
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to fetch most used language data: "+err.Error(),
+		)
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"language": language,
+	})
 }

@@ -15,6 +15,7 @@ import { toast } from "react-hot-toast"
 
 import { useForm, Controller } from "react-hook-form"
 import { useConcepts } from "@/features/edit-concepts/api/useConcepts"
+import { useMostUsedLanguage } from "../../api/useGetMostUsedLanguage"
 
 
 type FormFields = {
@@ -62,9 +63,10 @@ function cleanLeetCodeUrl(url: string): string {
 }
 
 export default function SubmitProblemForm() {
+    const { data: mostUsedLanguage } = useMostUsedLanguage()
     const form = useForm<FormFields>({
         defaultValues: {
-            answerLanguage: "other",
+            answerLanguage: "python",
         },
     })
     const { data: concepts } = useConcepts()
@@ -72,6 +74,13 @@ export default function SubmitProblemForm() {
     const { errors, isSubmitting } = formState
     const { mutateAsync } = useCreateProblem()
     const { mutate: fetchLeetCode, isPending: isFetching, isSuccess: isFetched } = useFetchLeetCode()
+
+    // Update answerLanguage once the most-used language is fetched
+    useEffect(() => {
+        if (mostUsedLanguage) {
+            setValue("answerLanguage", mostUsedLanguage)
+        }
+    }, [mostUsedLanguage, setValue])
 
     // Watch the problem link field
     const problemLink = watch("problemLink")
@@ -285,9 +294,10 @@ export default function SubmitProblemForm() {
                                 </Select>
                             )}
                         />
-                        <p className="text-xs text-muted-foreground">
-                            Pick a language for better code formatting. Choose Other for default behavior.
-                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Sparkles className="h-3 w-3 text-yellow-500" />
+                            <span>Auto-set to your most used language. Pick a different one or choose Other for default behavior.</span>
+                        </div>
                     </div>
                 </CardContent>
                 <CardFooter className="flex gap-3 justify-end border-t pt-6">
