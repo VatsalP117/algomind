@@ -25,6 +25,8 @@ func NewServer(cfg *config.Config) *Server {
 
 	e.Use(middleware.Recover())
 
+	e.Use(middleware.Gzip())
+
 	e.Use(middleware.Logger())
 
 	e.Use(middleware.CORSWithConfig(

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/clerk/clerk-sdk-go/v2/jwt" // <--- The new package for verification
@@ -12,7 +13,8 @@ import (
 )
 
 type AuthMiddleware struct {
-	DB *database.Service
+	DB         *database.Service
+	knownUsers sync.Map // in-memory cache of user IDs we've already ensured exist
 }
 
 func New(db *database.Service) *AuthMiddleware {
@@ -71,6 +73,11 @@ func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func (am *AuthMiddleware) ensureUserExists(c echo.Context, userID string) error {
+	// Fast path: user already known from a previous request in this process
+	if _, ok := am.knownUsers.Load(userID); ok {
+		return nil
+	}
+
 	_, err := am.DB.Db.ExecContext(
 		c.Request().Context(),
 		`INSERT INTO users (id, created_at) VALUES ($1, NOW()) ON CONFLICT (id) DO NOTHING`,
@@ -80,5 +87,8 @@ func (am *AuthMiddleware) ensureUserExists(c echo.Context, userID string) error 
 		log.Error().Err(err).Str("user_id", userID).Msg("Failed to ensure user exists")
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to sync user"})
 	}
+
+	// Cache for future requests
+	am.knownUsers.Store(userID, struct{}{})
 	return nil
 }

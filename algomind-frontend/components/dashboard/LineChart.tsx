@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 const chartConfig = {
     recall_rate: {
         label: 'Recall Rate',
-        color: 'hsl(var(--chart-1))',
+        color: 'var(--color-chart-1)',
     },
 } satisfies ChartConfig
 
@@ -107,14 +107,14 @@ export function ChartLineLinear() {
                         >
                             <defs>
                                 <linearGradient id="recallGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
-                                    <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                                    <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.3} />
+                                    <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid
                                 vertical={false}
                                 strokeDasharray="3 3"
-                                stroke="hsl(var(--border))"
+                                stroke="var(--color-border)"
                             />
                             <XAxis
                                 dataKey="date"
@@ -122,7 +122,7 @@ export function ChartLineLinear() {
                                 axisLine={false}
                                 tickMargin={8}
                                 fontSize={12}
-                                stroke="hsl(var(--muted-foreground))"
+                                stroke="var(--color-muted-foreground)"
                             />
                             <YAxis
                                 domain={[0, 100]}
@@ -131,19 +131,19 @@ export function ChartLineLinear() {
                                 tickFormatter={(value) => `${value}%`}
                                 width={45}
                                 fontSize={12}
-                                stroke="hsl(var(--muted-foreground))"
+                                stroke="var(--color-muted-foreground)"
                             />
                             <ChartTooltip
-                                cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }}
+                                cursor={{ stroke: 'var(--color-muted-foreground)', strokeWidth: 1 }}
                                 content={<ChartTooltipContent hideLabel />}
                             />
                             <Line
                                 dataKey="recall_rate"
                                 type="monotone"
-                                stroke="hsl(var(--chart-1))"
+                                stroke="var(--color-chart-1)"
                                 strokeWidth={2.5}
-                                dot={{ fill: 'hsl(var(--chart-1))', strokeWidth: 0, r: 4 }}
-                                activeDot={{ r: 6, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
+                                dot={{ fill: 'var(--color-chart-1)', strokeWidth: 0, r: 4 }}
+                                activeDot={{ r: 6, strokeWidth: 2, stroke: 'var(--color-background)' }}
                             />
                         </LineChart>
                     </ChartContainer>

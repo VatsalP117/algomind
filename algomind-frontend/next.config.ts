@@ -5,7 +5,12 @@ const nextConfig: NextConfig = {
 
   // Tree-shake large icon libraries — only bundle icons actually used
   experimental: {
-    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-icons",
+      "@tabler/icons-react",
+      "recharts",
+    ],
   },
 };
 
