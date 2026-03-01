@@ -5,7 +5,6 @@ import (
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
 	"github.com/clerk/clerk-sdk-go/v2"
-	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
@@ -39,13 +38,9 @@ func NewServer(cfg *config.Config) *Server {
 			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		}))
 
-	e.Use(echoprometheus.NewMiddleware("algomind"))
-
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "OK"})
 	})
-
-	e.GET("/metrics", echoprometheus.NewHandler())
 
 	e.Validator = NewValidator()
 
