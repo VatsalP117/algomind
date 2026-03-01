@@ -151,7 +151,8 @@ func (h *MetricsHandler) GetTopicMastery(c echo.Context) error {
 		FROM concepts c
 		LEFT JOIN problem_stats ps ON ps.concept_id = c.id
 		LEFT JOIN retention_stats rs ON rs.concept_id = c.id
-		WHERE EXISTS (
+		WHERE (c.user_id IS NULL OR c.user_id = $1) 
+		  AND EXISTS (
 			SELECT 1 FROM problems p 
 			WHERE p.concept_id = c.id AND p.user_id = $1
 		)

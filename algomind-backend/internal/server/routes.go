@@ -18,14 +18,27 @@ func RegisterRoutes(e *echo.Echo, db *database.Service) {
 	metricsHandler := handlers.NewMetricsHandler(db)
 	leetcodeHandler := handlers.NewLeetCodeHandler()
 
-	internalConceptHandler := handlers.NewInternalConceptHandler(db)
-	internal := e.Group("/internal")
-	internal.Use(authMiddleware.RequireAuth)
-	internal.POST("/concepts", internalConceptHandler.CreateConcept)
+	folderHandler := handlers.NewConceptFolderHandler(db)
+
 	api := e.Group("/api/v1")
 	api.Use(authMiddleware.RequireAuth)
+
 	api.GET("/profile", userHandler.GetProfile)
+
+	// Concepts CRUD
 	api.GET("/concepts", conceptHandler.ListConcepts)
+	api.POST("/concepts", conceptHandler.CreateConcept)
+	api.PUT("/concepts/:id", conceptHandler.UpdateConcept)
+	api.DELETE("/concepts/:id", conceptHandler.DeleteConcept)
+	api.POST("/concepts/:id/reset", conceptHandler.ResetConcept)
+
+	// Concept Folders
+	api.GET("/concept-folders", folderHandler.ListFolders)
+	api.POST("/concept-folders", folderHandler.CreateFolder)
+	api.PUT("/concept-folders/:id", folderHandler.UpdateFolder)
+	api.DELETE("/concept-folders/:id", folderHandler.DeleteFolder)
+	api.PUT("/concept-folder-items", folderHandler.AssignToFolder)
+	api.DELETE("/concept-folder-items/:concept_id", folderHandler.RemoveFromFolder)
 
 	api.POST("/problems", problemHandler.CreateProblem)
 	api.GET("/problems", problemHandler.GetAllUserProblems)

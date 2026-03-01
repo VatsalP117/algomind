@@ -37,6 +37,16 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
+	var conceptOwner *string
+	err := h.DB.Db.GetContext(ctx, &conceptOwner, "SELECT user_id FROM concepts WHERE id = $1", req.ConceptID)
+	if err != nil {
+		log.Printf("Error validating concept ownership: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid concept")
+	}
+	if conceptOwner != nil && *conceptOwner != userID {
+		return echo.NewHTTPError(http.StatusForbidden, "concept not accessible")
+	}
+
 	tx, err := h.DB.Db.BeginTxx(ctx, nil)
 	if err != nil {
 		log.Printf("Database error starting transaction for user %s: %v", userID, err)
