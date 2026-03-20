@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/labstack/echo/v4"
 )
 
@@ -38,17 +39,19 @@ func (h *UserHandler) GetProfile(c echo.Context) error {
 		`
 
 		if _, err := h.DB.Db.ExecContext(ctx, insertQuery, userID); err != nil {
-			return echo.NewHTTPError(
+			return observability.HTTPError(
 				http.StatusInternalServerError,
 				"failed to create user",
+				err,
 			)
 		}
 
 	case err != nil:
 		// 4️⃣ Real DB error
-		return echo.NewHTTPError(
+		return observability.HTTPError(
 			http.StatusInternalServerError,
 			"failed to fetch user",
+			err,
 		)
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/models"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/labstack/echo/v4"
 )
 
@@ -35,12 +36,12 @@ func (h *ConceptFolderHandler) ListFolders(c echo.Context) error {
 
 	err := h.DB.Db.SelectContext(c.Request().Context(), &folders, "SELECT * FROM concept_folders WHERE user_id = $1 ORDER BY sort_order ASC, name ASC", userID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch folders")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to fetch folders", err)
 	}
 
 	err = h.DB.Db.SelectContext(c.Request().Context(), &items, "SELECT * FROM concept_folder_items WHERE user_id = $1 ORDER BY sort_order ASC", userID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch folder items")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to fetch folder items", err)
 	}
 
 	if folders == nil {
@@ -76,7 +77,7 @@ func (h *ConceptFolderHandler) CreateFolder(c echo.Context) error {
 	var folder models.ConceptFolder
 	if err := h.DB.Db.GetContext(c.Request().Context(), &folder, query, userID, req.Name, req.ParentFolderID); err != nil {
 		log.Printf("Error creating folder: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create folder")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to create folder", err)
 	}
 
 	return c.JSON(http.StatusCreated, folder)
@@ -103,7 +104,7 @@ func (h *ConceptFolderHandler) UpdateFolder(c echo.Context) error {
 
 	var folder models.ConceptFolder
 	if err := h.DB.Db.GetContext(c.Request().Context(), &folder, query, req.Name, req.ParentFolderID, folderID, userID); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update folder")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to update folder", err)
 	}
 
 	return c.JSON(http.StatusOK, folder)
@@ -116,7 +117,7 @@ func (h *ConceptFolderHandler) DeleteFolder(c echo.Context) error {
 	query := `DELETE FROM concept_folders WHERE id = $1 AND user_id = $2`
 	res, err := h.DB.Db.ExecContext(c.Request().Context(), query, folderID, userID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete folder")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to delete folder", err)
 	}
 
 	rows, _ := res.RowsAffected()
@@ -146,7 +147,7 @@ func (h *ConceptFolderHandler) AssignToFolder(c echo.Context) error {
 	`
 	if _, err := h.DB.Db.ExecContext(c.Request().Context(), query, userID, req.FolderID, req.ConceptID); err != nil {
 		log.Printf("Error assigning concept to folder: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to assign concept to folder")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to assign concept to folder", err)
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "concept assigned to folder"})
@@ -158,7 +159,7 @@ func (h *ConceptFolderHandler) RemoveFromFolder(c echo.Context) error {
 
 	query := `DELETE FROM concept_folder_items WHERE concept_id = $1 AND user_id = $2`
 	if _, err := h.DB.Db.ExecContext(c.Request().Context(), query, conceptID, userID); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to remove concept from folder")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to remove concept from folder", err)
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "concept removed from folder"})

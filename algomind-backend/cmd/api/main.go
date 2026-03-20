@@ -1,11 +1,10 @@
 package main
 
 import (
-	"log"
-
 	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/server"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -16,7 +15,7 @@ func main() {
 	srv := server.NewServer(cfg)
 	server.RegisterRoutes(srv.Echo, db, cfg)
 	if err := srv.Start(); err != nil {
-		log.Fatal("Server failed to start:", err)
+		log.Fatal().Err(err).Msg("Server failed to start")
 	}
 
 }
@@ -24,8 +23,8 @@ func main() {
 func mustInitDb(dsn string) *database.Service {
 	db, err := database.New(dsn)
 	if err != nil {
-		log.Fatal("Could not connect to database:", err)
+		log.Fatal().Err(err).Msg("Could not connect to database")
 	}
-	log.Println("Connected to database")
+	log.Info().Msg("Connected to database")
 	return db
 }

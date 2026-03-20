@@ -7,6 +7,7 @@ import (
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/models"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/labstack/echo/v4"
 )
 
@@ -50,9 +51,10 @@ func (h *ConceptHandler) ListConcepts(c echo.Context) error {
 		userID,
 	); err != nil {
 		log.Printf("Error fetching concepts: %v", err)
-		return echo.NewHTTPError(
+		return observability.HTTPError(
 			http.StatusInternalServerError,
 			"failed to fetch concepts",
+			err,
 		)
 	}
 
@@ -91,9 +93,10 @@ func (h *ConceptHandler) CreateConcept(c echo.Context) error {
 		req.Content,
 	); err != nil {
 		log.Printf("Error creating concept: %v", err)
-		return echo.NewHTTPError(
+		return observability.HTTPError(
 			http.StatusInternalServerError,
 			"failed to create concept",
+			err,
 		)
 	}
 
@@ -118,7 +121,7 @@ func (h *ConceptHandler) UpdateConcept(c echo.Context) error {
 	if err == sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusNotFound, "concept not found")
 	} else if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "database error")
+		return observability.HTTPError(http.StatusInternalServerError, "database error", err)
 	}
 
 	var updatedConcept models.Concept
@@ -138,7 +141,7 @@ func (h *ConceptHandler) UpdateConcept(c echo.Context) error {
 			`
 			if err := h.DB.Db.GetContext(c.Request().Context(), &updatedConcept, query, userID, current.ID, req.Title, req.Description, req.Content); err != nil {
 				log.Printf("Error creating concept override: %v", err)
-				return echo.NewHTTPError(http.StatusInternalServerError, "failed to update concept")
+				return observability.HTTPError(http.StatusInternalServerError, "failed to update concept", err)
 			}
 		} else if overrideErr == nil {
 			// Override exists — update it
@@ -149,11 +152,11 @@ func (h *ConceptHandler) UpdateConcept(c echo.Context) error {
 			`
 			if err := h.DB.Db.GetContext(c.Request().Context(), &updatedConcept, query, req.Title, req.Description, req.Content, existingOverrideID); err != nil {
 				log.Printf("Error updating concept override: %v", err)
-				return echo.NewHTTPError(http.StatusInternalServerError, "failed to update concept")
+				return observability.HTTPError(http.StatusInternalServerError, "failed to update concept", err)
 			}
 		} else {
 			log.Printf("Error checking for override: %v", overrideErr)
-			return echo.NewHTTPError(http.StatusInternalServerError, "database error")
+			return observability.HTTPError(http.StatusInternalServerError, "database error", overrideErr)
 		}
 	} else if *current.UserID == userID {
 		// It's the user's concept. Update in place.
@@ -165,7 +168,7 @@ func (h *ConceptHandler) UpdateConcept(c echo.Context) error {
 		`
 		if err := h.DB.Db.GetContext(c.Request().Context(), &updatedConcept, query, req.Title, req.Description, req.Content, current.ID, userID); err != nil {
 			log.Printf("Error updating concept: %v", err)
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to update concept")
+			return observability.HTTPError(http.StatusInternalServerError, "failed to update concept", err)
 		}
 	} else {
 		return echo.NewHTTPError(http.StatusForbidden, "not authorized to update this concept")
@@ -181,7 +184,7 @@ func (h *ConceptHandler) DeleteConcept(c echo.Context) error {
 	query := `DELETE FROM concepts WHERE id = $1 AND user_id = $2`
 	res, err := h.DB.Db.ExecContext(c.Request().Context(), query, conceptID, userID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete concept")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to delete concept", err)
 	}
 
 	rowsAffected, _ := res.RowsAffected()
@@ -200,7 +203,7 @@ func (h *ConceptHandler) ResetConcept(c echo.Context) error {
 	query := `DELETE FROM concepts WHERE base_concept_id = $1 AND user_id = $2`
 	res, err := h.DB.Db.ExecContext(c.Request().Context(), query, systemConceptID, userID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to reset concept")
+		return observability.HTTPError(http.StatusInternalServerError, "failed to reset concept", err)
 	}
 
 	rowsAffected, _ := res.RowsAffected()

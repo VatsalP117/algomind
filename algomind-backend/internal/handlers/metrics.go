@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/dto"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,6 +22,7 @@ func NewMetricsHandler(db *database.Service) *MetricsHandler {
 func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
+	logger := observability.LoggerFromContext(c).With().Str("handler", "metrics_dashboard").Logger()
 
 	var summary dto.DashboardSummary
 
@@ -43,13 +44,14 @@ func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 				
 				(SELECT COUNT(*) FROM problems 
 				 WHERE user_id = $1) as total_problems
-		`
+	`
 
 	if err := h.DB.Db.GetContext(ctx, &summary, query, userID); err != nil {
-		fmt.Println("Dashboard metrics error:", err)
-		return echo.NewHTTPError(
+		logger.Error().Err(err).Msg("Failed to fetch dashboard metrics")
+		return observability.HTTPError(
 			http.StatusInternalServerError,
 			"failed to fetch dashboard metrics",
+			err,
 		)
 	}
 
@@ -59,12 +61,15 @@ func (h *MetricsHandler) GetDashboard(c echo.Context) error {
 func (h *MetricsHandler) GetRecallQuality(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
+	logger := observability.LoggerFromContext(c).With().Str("handler", "metrics_recall").Logger()
 
 	daysStr := c.QueryParam("days")
 	days := 7
 	if daysStr != "" {
 		if d, err := strconv.Atoi(daysStr); err == nil && d > 0 && d <= 90 {
 			days = d
+		} else {
+			logger.Warn().Str("days", daysStr).Msg("Received invalid recall metrics days parameter, using default")
 		}
 	}
 
@@ -87,9 +92,11 @@ func (h *MetricsHandler) GetRecallQuality(c echo.Context) error {
 
 	var dataPoints []dto.RecallDataPoint
 	if err := h.DB.Db.SelectContext(ctx, &dataPoints, query, userID, days); err != nil {
-		return echo.NewHTTPError(
+		logger.Error().Err(err).Int("days", days).Msg("Failed to fetch recall quality data")
+		return observability.HTTPError(
 			http.StatusInternalServerError,
 			"failed to fetch recall quality data",
+			err,
 		)
 	}
 
@@ -103,6 +110,7 @@ func (h *MetricsHandler) GetRecallQuality(c echo.Context) error {
 func (h *MetricsHandler) GetTopicMastery(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
+	logger := observability.LoggerFromContext(c).With().Str("handler", "metrics_mastery").Logger()
 
 	query := `
 		WITH problem_stats AS (
@@ -163,9 +171,11 @@ func (h *MetricsHandler) GetTopicMastery(c echo.Context) error {
 
 	var mastery []dto.TopicMastery
 	if err := h.DB.Db.SelectContext(ctx, &mastery, query, userID); err != nil {
-		return echo.NewHTTPError(
+		logger.Error().Err(err).Msg("Failed to fetch topic mastery data")
+		return observability.HTTPError(
 			http.StatusInternalServerError,
-			"failed to fetch topic mastery data: "+err.Error(),
+			"failed to fetch topic mastery data",
+			err,
 		)
 	}
 
@@ -179,6 +189,7 @@ func (h *MetricsHandler) GetTopicMastery(c echo.Context) error {
 func (h *MetricsHandler) GetMostUsedLanguage(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
+	logger := observability.LoggerFromContext(c).With().Str("handler", "metrics_most_used_language").Logger()
 
 	query := `
 		SELECT 
@@ -197,9 +208,11 @@ func (h *MetricsHandler) GetMostUsedLanguage(c echo.Context) error {
 				"language": nil,
 			})
 		}
-		return echo.NewHTTPError(
+		logger.Error().Err(err).Msg("Failed to fetch most used language")
+		return observability.HTTPError(
 			http.StatusInternalServerError,
-			"failed to fetch most used language data: "+err.Error(),
+			"failed to fetch most used language data",
+			err,
 		)
 	}
 

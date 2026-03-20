@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/clerk/clerk-sdk-go/v2/jwt" // <--- The new package for verification
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
 )
 
 type AuthMiddleware struct {
@@ -23,11 +23,14 @@ func New(db *database.Service) *AuthMiddleware {
 
 func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		logger := observability.LoggerFromContext(c).With().Str("component", "auth_middleware").Logger()
+
 		// 1. Get the token
 		authHeader := c.Request().Header.Get("Authorization")
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 
 		if token == "" {
+			logger.Warn().Msg("Missing Authorization header")
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Missing Authorization header"})
 		}
 
@@ -38,8 +41,11 @@ func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 			// Hardcode the user ID from env
 			testUserID := os.Getenv("TEST_USER_ID")
 			if testUserID == "" {
+				logger.Error().Msg("TEST_USER_ID not set for development auth bypass")
 				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "TEST_USER_ID not set"})
 			}
+
+			logger.Info().Str("user_id", testUserID).Msg("Using development auth bypass")
 
 			if err := am.ensureUserExists(c, testUserID); err != nil {
 				return err
@@ -57,7 +63,7 @@ func (am *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 		})
 
 		if err != nil {
-			log.Warn().Err(err).Msg("Invalid token received")
+			logger.Warn().Err(err).Msg("Invalid session token received")
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid Session"})
 		}
 
@@ -84,7 +90,8 @@ func (am *AuthMiddleware) ensureUserExists(c echo.Context, userID string) error 
 		userID,
 	)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userID).Msg("Failed to ensure user exists")
+		logger := observability.LoggerFromContext(c).With().Str("component", "auth_middleware").Logger()
+		logger.Error().Err(err).Str("user_id", userID).Msg("Failed to ensure user exists")
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to sync user"})
 	}
 

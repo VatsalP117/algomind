@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/dto"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/srs"
 	"github.com/labstack/echo/v4"
 )
@@ -61,9 +61,10 @@ func (h *ReviewHandler) GetQueue(c echo.Context) error {
 	var queue []dto.ReviewQueueItem
 
 	if err := h.DB.Db.SelectContext(ctx, &queue, query, userID); err != nil {
-		return echo.NewHTTPError(
+		return observability.HTTPError(
 			http.StatusInternalServerError,
-			err.Error(),
+			"failed to fetch review queue",
+			err,
 		)
 	}
 
@@ -189,7 +190,6 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		req.Rating,
 	); err != nil {
 		log.Printf("Database error: failed to log review entry for User %s, %s %s: %v", userID, entityType, entityID, err)
-		fmt.Println(err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to log review",
