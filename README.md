@@ -95,6 +95,7 @@ npm run dev
 ```
 
 Run migrations:
+
 ```bash
 migrate -path ./migrations -database "$DATABASE_URL" up
 ```
@@ -110,6 +111,7 @@ The backend `entrypoint.sh` runs `migrate up` before starting the server on ever
 Deployed on a Linux VPS using [Dokploy](https://dokploy.com), which handles Docker builds, Traefik reverse proxying, and Let's Encrypt SSL.
 
 **Environment variables required at build time** (baked into the Next.js bundle):
+
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 NEXT_PUBLIC_SITE_URL
@@ -120,22 +122,29 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
 ```
 
 **Environment variables required at runtime** (backend):
+
 ```
 DATABASE_URL
 CLERK_SECRET_KEY
 PORT
+LLM_BASE_URL
+LLM_API_KEY
+LLM_MODEL
+LLM_TIMEOUT_SECS
 ```
+
+`LLM_*` variables are optional. When configured, the backend can queue background hint generation for newly created problems.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 15, React, Tailwind CSS, shadcn/ui |
-| Auth | Clerk |
-| Data fetching | TanStack Query |
-| Backend | Go, Echo v4 |
-| Database | PostgreSQL 15 |
-| Migrations | golang-migrate |
-| Deployment | Docker, Dokploy, Traefik |
+| Layer         | Technology                                 |
+| ------------- | ------------------------------------------ |
+| Frontend      | Next.js 15, React, Tailwind CSS, shadcn/ui |
+| Auth          | Clerk                                      |
+| Data fetching | TanStack Query                             |
+| Backend       | Go, Echo v4                                |
+| Database      | PostgreSQL 15                              |
+| Migrations    | golang-migrate                             |
+| Deployment    | Docker, Dokploy, Traefik                   |

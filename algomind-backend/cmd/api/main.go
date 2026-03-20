@@ -14,7 +14,7 @@ func main() {
 	defer db.Close()
 
 	srv := server.NewServer(cfg)
-	server.RegisterRoutes(srv.Echo, db)
+	server.RegisterRoutes(srv.Echo, db, cfg)
 	if err := srv.Start(); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}

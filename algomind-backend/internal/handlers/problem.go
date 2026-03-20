@@ -1,21 +1,30 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/dto"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/llm"
 	"github.com/labstack/echo/v4"
+	zlog "github.com/rs/zerolog/log"
 )
 
 type ProblemHandler struct {
-	DB *database.Service
+	DB        *database.Service
+	LLMClient *llm.Client
 }
 
-func NewProblemHandler(db *database.Service) *ProblemHandler {
-	return &ProblemHandler{DB: db}
+func NewProblemHandler(db *database.Service, llmClient *llm.Client) *ProblemHandler {
+	return &ProblemHandler{
+		DB:        db,
+		LLMClient: llmClient,
+	}
 }
 
 func (h *ProblemHandler) CreateProblem(c echo.Context) error {
@@ -37,14 +46,22 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	var conceptOwner *string
-	err := h.DB.Db.GetContext(ctx, &conceptOwner, "SELECT user_id FROM concepts WHERE id = $1", req.ConceptID)
+	var concept struct {
+		UserID *string `db:"user_id"`
+		Title  string  `db:"title"`
+	}
+	err := h.DB.Db.GetContext(ctx, &concept, "SELECT user_id, title FROM concepts WHERE id = $1", req.ConceptID)
 	if err != nil {
 		log.Printf("Error validating concept ownership: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid concept")
 	}
-	if conceptOwner != nil && *conceptOwner != userID {
+	if concept.UserID != nil && *concept.UserID != userID {
 		return echo.NewHTTPError(http.StatusForbidden, "concept not accessible")
+	}
+
+	storedHints := strings.TrimSpace(req.Hints)
+	if req.GenerateHints {
+		storedHints = ""
 	}
 
 	tx, err := h.DB.Db.BeginTxx(ctx, nil)
@@ -94,7 +111,7 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 		req.Description,
 		req.Answer,
 		req.AnswerLanguage,
-		req.Hints,
+		storedHints,
 	).Scan(&problemID); err != nil {
 		log.Printf("Database error creating problem for user %s, title '%s': %v", userID, req.Title, err)
 		return echo.NewHTTPError(
@@ -145,8 +162,22 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 
 	log.Printf("Successfully created review state for problem ID %d", problemID)
 
+	hintGenerationQueued := false
+	if req.GenerateHints {
+		hintGenerationQueued = h.enqueueHintGeneration(userID, problemID, llm.HintRequest{
+			Title:          req.Title,
+			Difficulty:     req.Difficulty,
+			Summary:        req.Summary,
+			Description:    req.Description,
+			Answer:         req.Answer,
+			ConceptTitle:   concept.Title,
+			AnswerLanguage: derefString(req.AnswerLanguage),
+		})
+	}
+
 	return c.JSON(http.StatusCreated, map[string]interface{}{
-		"id": problemID,
+		"id":                     problemID,
+		"hint_generation_queued": hintGenerationQueued,
 	})
 }
 
@@ -297,4 +328,101 @@ func (h *ProblemHandler) AddProblemToReviewQueue(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"id": problemId,
 	})
+}
+
+func (h *ProblemHandler) enqueueHintGeneration(userID string, problemID int64, req llm.HintRequest) bool {
+	jobID := newHintGenerationJobID(problemID)
+	logger := zlog.With().
+		Str("component", "llm_hint_generation").
+		Str("job_id", jobID).
+		Str("user_id", userID).
+		Int64("problem_id", problemID).
+		Logger()
+
+	if h.LLMClient == nil || !h.LLMClient.Enabled() {
+		logger.Warn().
+			Msg("Hint generation requested but LLM client is not configured")
+		return false
+	}
+
+	logger.Info().
+		Str("difficulty", req.Difficulty).
+		Int("summary_chars", len(req.Summary)).
+		Int("description_chars", len(req.Description)).
+		Int("answer_chars", len(req.Answer)).
+		Bool("has_answer_language", req.AnswerLanguage != "").
+		Msg("Queued background hint generation")
+
+	go func() {
+		jobStartedAt := time.Now()
+		logger.Info().Msg("Background hint generation started")
+
+		llmCtx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer cancel()
+
+		hints, err := h.LLMClient.GenerateHints(llmCtx, llm.RequestMetadata{
+			JobID:     jobID,
+			UserID:    userID,
+			ProblemID: problemID,
+		}, req)
+		if err != nil {
+			logger.Error().
+				Err(err).
+				Int64("duration_ms", time.Since(jobStartedAt).Milliseconds()).
+				Msg("Background hint generation failed")
+			return
+		}
+
+		dbCtx, dbCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer dbCancel()
+
+		result, err := h.DB.Db.ExecContext(
+			dbCtx,
+			`
+				UPDATE problems
+				SET hints = $1
+				WHERE id = $2
+				  AND user_id = $3
+				  AND COALESCE(NULLIF(btrim(hints), ''), '') = ''
+			`,
+			hints,
+			problemID,
+			userID,
+		)
+		if err != nil {
+			logger.Error().
+				Err(err).
+				Int64("duration_ms", time.Since(jobStartedAt).Milliseconds()).
+				Msg("Failed to persist generated hints")
+			return
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err == nil && rowsAffected > 0 {
+			logger.Info().
+				Int64("duration_ms", time.Since(jobStartedAt).Milliseconds()).
+				Int("hint_chars", len(hints)).
+				Int64("rows_affected", rowsAffected).
+				Msg("Stored generated hints")
+			return
+		}
+
+		logger.Info().
+			Int64("duration_ms", time.Since(jobStartedAt).Milliseconds()).
+			Int("hint_chars", len(hints)).
+			Msg("Skipped storing generated hints because hints were already present")
+	}()
+
+	return true
+}
+
+func derefString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
+func newHintGenerationJobID(problemID int64) string {
+	return fmt.Sprintf("hint-%d-%d", problemID, time.Now().UnixNano())
 }

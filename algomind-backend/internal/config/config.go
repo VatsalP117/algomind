@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -11,6 +12,10 @@ type Config struct {
 	Port           string
 	ClerkSecretKey string
 	DatabaseURL    string
+	LLMBaseURL     string
+	LLMAPIKey      string
+	LLMModel       string
+	LLMTimeoutSecs int
 }
 
 func Load() *Config {
@@ -23,6 +28,10 @@ func Load() *Config {
 		Port:           getEnv("PORT", "8080"), // Default to 8080 if PORT is not set
 		ClerkSecretKey: getEnv("CLERK_SECRET_KEY", ""),
 		DatabaseURL:    getEnv("DATABASE_URL", ""),
+		LLMBaseURL:     getEnv("LLM_BASE_URL", ""),
+		LLMAPIKey:      getEnv("LLM_API_KEY", ""),
+		LLMModel:       getEnv("LLM_MODEL", "llama3.2"),
+		LLMTimeoutSecs: getEnvAsInt("LLM_TIMEOUT_SECS", 120),
 	}
 
 	if cfg.ClerkSecretKey == "" {
@@ -39,6 +48,16 @@ func Load() *Config {
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
+	}
+	return fallback
+}
+
+func getEnvAsInt(key string, fallback int) int {
+	if value, exists := os.LookupEnv(key); exists {
+		var parsed int
+		if _, err := fmt.Sscanf(value, "%d", &parsed); err == nil && parsed > 0 {
+			return parsed
+		}
 	}
 	return fallback
 }

@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
 import { toast } from 'react-hot-toast'
 
@@ -13,6 +12,7 @@ export type CreateProblemInput = {
     answer: string
     answerLanguage?: string
     hints: string
+    generateHints: boolean
 }
 
 type Payload = {
@@ -25,6 +25,12 @@ type Payload = {
     answer: string
     answer_language: string | null
     hints: string
+    generate_hints: boolean
+}
+
+type CreateProblemResponse = {
+    id: number
+    hint_generation_queued: boolean
 }
 
 const markdownSignals = [
@@ -45,7 +51,7 @@ const codeSignals = [
 const formatAnswerAsMarkdown = (answer: string, answerLanguage?: string) => {
     const trimmed = answer.trim()
     if (!trimmed) return trimmed
-    if (trimmed.includes("```")) return trimmed
+    if (trimmed.includes('```')) return trimmed
 
     const isMarkdown = markdownSignals.some((pattern) => pattern.test(trimmed))
     if (isMarkdown) return trimmed
@@ -53,13 +59,12 @@ const formatAnswerAsMarkdown = (answer: string, answerLanguage?: string) => {
     const isCode = codeSignals.some((pattern) => pattern.test(trimmed))
     if (!isCode && !answerLanguage) return trimmed
 
-    const language = (answerLanguage || "").trim().toLowerCase()
+    const language = (answerLanguage || '').trim().toLowerCase()
     return `\`\`\`${language}\n${trimmed}\n\`\`\``
 }
 
 export const useCreateProblem = () => {
     const queryClient = useQueryClient()
-    const router = useRouter()
 
     return useMutation({
         mutationFn: async (data: CreateProblemInput) => {
@@ -67,23 +72,42 @@ export const useCreateProblem = () => {
                 concept_id: data.conceptId, // Default to 0 if null, as Go int64 is non-nullable
                 title: data.title,
                 link: data.problemLink || '',
-                difficulty: data.difficulty ? data.difficulty.toUpperCase() : 'EASY',
+                difficulty: data.difficulty
+                    ? data.difficulty.toUpperCase()
+                    : 'EASY',
                 summary: data.summary,
                 description: data.description || '',
-                answer: formatAnswerAsMarkdown(data.answer, data.answerLanguage),
+                answer: formatAnswerAsMarkdown(
+                    data.answer,
+                    data.answerLanguage,
+                ),
                 answer_language: data.answerLanguage || null,
                 hints: data.hints || '',
+                generate_hints: data.generateHints,
             }
 
-            // 4. Send Request
             const res = await api.post('/problems', payload)
-            return res.data
+            return res.data as CreateProblemResponse
         },
 
-        onSuccess: () => {
+        onSuccess: (data, variables) => {
             // A new problem immediately enters the review queue and changes dashboard totals
             queryClient.invalidateQueries({ queryKey: ['review-problems'] })
             queryClient.invalidateQueries({ queryKey: ['metrics'] })
+            if (data.hint_generation_queued) {
+                toast.success(
+                    'Problem added. Hints will be generated in the background.',
+                )
+                return
+            }
+
+            if (variables.generateHints) {
+                toast.success(
+                    'Problem added. Automatic hint generation is currently unavailable.',
+                )
+                return
+            }
+
             toast.success('Problem added successfully')
         },
 

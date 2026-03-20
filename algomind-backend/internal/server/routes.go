@@ -3,16 +3,19 @@ package server
 import (
 	"github.com/labstack/echo/v4"
 
+	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/handlers"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/llm"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/middleware"
 )
 
-func RegisterRoutes(e *echo.Echo, db *database.Service) {
+func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	authMiddleware := middleware.New(db)
+	llmClient := llm.NewClient(cfg)
 
 	userHandler := handlers.NewUserHandler(db)
-	problemHandler := handlers.NewProblemHandler(db)
+	problemHandler := handlers.NewProblemHandler(db, llmClient)
 	reviewHandler := handlers.NewReviewHandler(db)
 	conceptHandler := handlers.NewConceptHandler(db)
 	metricsHandler := handlers.NewMetricsHandler(db)

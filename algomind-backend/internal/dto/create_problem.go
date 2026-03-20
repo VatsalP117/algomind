@@ -11,6 +11,7 @@ type CreateProblemRequest struct {
 	Answer         string  `json:"answer" validate:"required"`
 	AnswerLanguage *string `json:"answer_language"`
 	Hints          string  `json:"hints"`
+	GenerateHints  bool    `json:"generate_hints"`
 }
 
 type UserProblemsResponse struct {
