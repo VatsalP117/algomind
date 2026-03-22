@@ -1,6 +1,6 @@
 "use client"
 import { useEffect } from 'react';
-import { Iris } from '@bigchill101/iris';
+import { Iris } from 'iris-analytics';
 import { usePathname } from 'next/navigation';
 
 export function AnalyticsComponent() {
@@ -14,6 +14,9 @@ export function AnalyticsComponent() {
             autocapture: {
                 pageviews: true,
                 webvitals: true,
+            },
+            batching: {
+                maxSize: 5,
             }
         });
 
