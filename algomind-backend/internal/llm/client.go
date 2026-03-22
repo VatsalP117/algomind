@@ -91,10 +91,8 @@ func (c *Client) GenerateHints(ctx context.Context, meta RequestMetadata, req Hi
 		Model: c.model,
 		Messages: []chatMessage{
 			{
-				Role: "system",
-				Content: "You create coding interview hints for spaced repetition. Return exactly three concise hints. " +
-					"Each hint must be on its own line starting with 'Hint 1:', 'Hint 2:', or 'Hint 3:'. " +
-					"Start broad and get slightly more specific each time. Do not reveal full code or the full solution.",
+				Role:    "system",
+				Content: "Return one short hint (under 40 words) to help recall the approach for a coding problem. No code.",
 			},
 			{
 				Role:    "user",
@@ -199,34 +197,20 @@ func (c *Client) GenerateHints(ctx context.Context, meta RequestMetadata, req Hi
 }
 
 func buildHintPrompt(req HintRequest) string {
-	var builder strings.Builder
-
-	builder.WriteString("Generate three short progressive hints for this coding problem.\n\n")
-	builder.WriteString("Problem title: " + req.Title + "\n")
-	builder.WriteString("Difficulty: " + req.Difficulty + "\n")
-
+	var b strings.Builder
+	b.WriteString(req.Title)
+	if req.Difficulty != "" {
+		b.WriteString(" (" + req.Difficulty + ")")
+	}
+	b.WriteString("\n")
 	if req.ConceptTitle != "" {
-		builder.WriteString("Concept: " + req.ConceptTitle + "\n")
+		b.WriteString("Concept: " + req.ConceptTitle + "\n")
 	}
 	if req.Summary != "" {
-		builder.WriteString("Summary: " + req.Summary + "\n")
+		b.WriteString(req.Summary + "\n")
 	}
-	if req.Description != "" {
-		builder.WriteString("Description:\n" + req.Description + "\n")
-	}
-	if req.AnswerLanguage != "" {
-		builder.WriteString("Answer language: " + req.AnswerLanguage + "\n")
-	}
-	if req.Answer != "" {
-		builder.WriteString("User answer / solution notes:\n" + req.Answer + "\n")
-	}
-
-	builder.WriteString("\nConstraints:\n")
-	builder.WriteString("- The hints should help the user recall the approach without giving away the full answer.\n")
-	builder.WriteString("- Mention a key data structure, invariant, or traversal idea if useful.\n")
-	builder.WriteString("- Keep the full output under 120 words.\n")
-
-	return builder.String()
+	b.WriteString("Hint to recall the approach, mention key data structure or technique.")
+	return b.String()
 }
 
 func normalizeHints(raw string) string {
