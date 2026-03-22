@@ -206,10 +206,10 @@ func buildHintPrompt(req HintRequest) string {
 	if req.ConceptTitle != "" {
 		b.WriteString("Concept: " + req.ConceptTitle + "\n")
 	}
-	if req.Summary != "" {
-		b.WriteString(req.Summary + "\n")
+	if req.Answer != "" {
+		b.WriteString("Solution:\n" + req.Answer + "\n")
 	}
-	b.WriteString("Hint to recall the approach, mention key data structure or technique.")
+	b.WriteString("Give a hint to recall this approach. Mention key data structure or technique.")
 	return b.String()
 }
 
