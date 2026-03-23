@@ -342,7 +342,7 @@ export default function SubmitProblemForm() {
                                     Generate hints automatically
                                 </Label>
                                 <p className="text-sm text-muted-foreground">
-                                    We run a self-hosted LLM in the
+                                    We send the hint job to Kimi in the
                                     background after save. The problem is
                                     created immediately, and hints will be added
                                     shortly without any extra step from you.

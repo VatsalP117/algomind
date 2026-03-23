@@ -28,10 +28,10 @@ func Load() *Config {
 		Port:           getEnv("PORT", "8080"), // Default to 8080 if PORT is not set
 		ClerkSecretKey: getEnv("CLERK_SECRET_KEY", ""),
 		DatabaseURL:    getEnv("DATABASE_URL", ""),
-		LLMBaseURL:     getEnv("LLM_BASE_URL", ""),
-		LLMAPIKey:      getEnv("LLM_API_KEY", ""),
-		LLMModel:       getEnv("LLM_MODEL", "llama3.2"),
-		LLMTimeoutSecs: getEnvAsInt("LLM_TIMEOUT_SECS", 120),
+		LLMBaseURL:     getEnvWithFallback("KIMI_BASE_URL", "LLM_BASE_URL", "https://api.moonshot.ai"),
+		LLMAPIKey:      getEnvWithFallback("KIMI_API_KEY", "LLM_API_KEY", ""),
+		LLMModel:       getEnvWithFallback("KIMI_MODEL", "LLM_MODEL", "kimi-k2.5"),
+		LLMTimeoutSecs: getEnvAsIntWithFallback("KIMI_TIMEOUT_SECS", "LLM_TIMEOUT_SECS", 120),
 	}
 
 	if cfg.ClerkSecretKey == "" {
@@ -52,6 +52,13 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func getEnvWithFallback(primaryKey, secondaryKey, fallback string) string {
+	if value, exists := os.LookupEnv(primaryKey); exists {
+		return value
+	}
+	return getEnv(secondaryKey, fallback)
+}
+
 func getEnvAsInt(key string, fallback int) int {
 	if value, exists := os.LookupEnv(key); exists {
 		var parsed int
@@ -60,4 +67,14 @@ func getEnvAsInt(key string, fallback int) int {
 		}
 	}
 	return fallback
+}
+
+func getEnvAsIntWithFallback(primaryKey, secondaryKey string, fallback int) int {
+	if value, exists := os.LookupEnv(primaryKey); exists {
+		var parsed int
+		if _, err := fmt.Sscanf(value, "%d", &parsed); err == nil && parsed > 0 {
+			return parsed
+		}
+	}
+	return getEnvAsInt(secondaryKey, fallback)
 }

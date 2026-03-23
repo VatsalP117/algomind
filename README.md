@@ -127,13 +127,20 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
 DATABASE_URL
 CLERK_SECRET_KEY
 PORT
-LLM_BASE_URL
-LLM_API_KEY
-LLM_MODEL
-LLM_TIMEOUT_SECS
+KIMI_BASE_URL
+KIMI_API_KEY
+KIMI_MODEL
+KIMI_TIMEOUT_SECS
 ```
 
-`LLM_*` variables are optional. When configured, the backend can queue background hint generation for newly created problems.
+Kimi hint generation is optional. Recommended values:
+
+```
+KIMI_BASE_URL=https://api.moonshot.ai
+KIMI_MODEL=kimi-k2.5
+```
+
+The backend also accepts the older `LLM_*` env names as a temporary fallback during the switch.
 
 ---
 

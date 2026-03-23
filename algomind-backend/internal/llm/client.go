@@ -43,8 +43,12 @@ type chatMessage struct {
 }
 
 type chatCompletionRequest struct {
-	Model    string        `json:"model"`
-	Messages []chatMessage `json:"messages"`
+	Model               string          `json:"model"`
+	Messages            []chatMessage   `json:"messages"`
+	MaxCompletionTokens int             `json:"max_completion_tokens,omitempty"`
+	PromptCacheKey      string          `json:"prompt_cache_key,omitempty"`
+	SafetyIdentifier    string          `json:"safety_identifier,omitempty"`
+	Thinking            *thinkingConfig `json:"thinking,omitempty"`
 }
 
 type chatCompletionResponse struct {
@@ -56,9 +60,13 @@ type chatCompletionResponse struct {
 	} `json:"error,omitempty"`
 }
 
+type thinkingConfig struct {
+	Type string `json:"type"`
+}
+
 func NewClient(cfg *config.Config) *Client {
 	return &Client{
-		baseURL: strings.TrimRight(cfg.LLMBaseURL, "/"),
+		baseURL: normalizeBaseURL(cfg.LLMBaseURL),
 		apiKey:  strings.TrimSpace(cfg.LLMAPIKey),
 		model:   strings.TrimSpace(cfg.LLMModel),
 		httpClient: &http.Client{
@@ -68,7 +76,7 @@ func NewClient(cfg *config.Config) *Client {
 }
 
 func (c *Client) Enabled() bool {
-	return c != nil && c.baseURL != "" && c.model != ""
+	return c != nil && c.baseURL != "" && c.apiKey != "" && c.model != ""
 }
 
 func (c *Client) GenerateHints(ctx context.Context, meta RequestMetadata, req HintRequest) (string, error) {
@@ -79,6 +87,7 @@ func (c *Client) GenerateHints(ctx context.Context, meta RequestMetadata, req Hi
 	endpoint := c.baseURL + "/v1/chat/completions"
 	logger := zlog.With().
 		Str("component", "llm_hint_generation").
+		Str("provider", "moonshot_kimi").
 		Str("job_id", meta.JobID).
 		Str("user_id", meta.UserID).
 		Int64("problem_id", meta.ProblemID).
@@ -88,7 +97,10 @@ func (c *Client) GenerateHints(ctx context.Context, meta RequestMetadata, req Hi
 	requestStartedAt := time.Now()
 
 	payload := chatCompletionRequest{
-		Model: c.model,
+		Model:               c.model,
+		MaxCompletionTokens: 256,
+		PromptCacheKey:      fmt.Sprintf("problem-hints:%d", meta.ProblemID),
+		SafetyIdentifier:    meta.UserID,
 		Messages: []chatMessage{
 			{
 				Role:    "system",
@@ -99,6 +111,9 @@ func (c *Client) GenerateHints(ctx context.Context, meta RequestMetadata, req Hi
 				Content: buildHintPrompt(req),
 			},
 		},
+	}
+	if strings.HasPrefix(c.model, "kimi-k2.5") {
+		payload.Thinking = &thinkingConfig{Type: "disabled"}
 	}
 
 	bodyBytes, err := json.Marshal(payload)
@@ -226,4 +241,11 @@ func truncateForLog(value string, max int) string {
 		return trimmed
 	}
 	return trimmed[:max] + "..."
+}
+
+func normalizeBaseURL(raw string) string {
+	baseURL := strings.TrimSpace(raw)
+	baseURL = strings.TrimRight(baseURL, "/")
+	baseURL = strings.TrimSuffix(baseURL, "/v1")
+	return baseURL
 }
