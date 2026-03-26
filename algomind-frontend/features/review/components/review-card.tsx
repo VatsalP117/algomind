@@ -93,7 +93,7 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                 {/* Problem Description */}
                 {problem.description && (
                     <div
-                        className="prose prose-sm dark:prose-invert max-w-none rounded-md border bg-muted/30 p-4 max-h-64 overflow-y-auto"
+                        className="prose prose-sm dark:prose-invert max-w-none rounded-md border bg-muted/30 p-4 max-h-[500px] overflow-y-auto"
                         dangerouslySetInnerHTML={{
                             __html: problem.description,
                         }}
@@ -131,7 +131,7 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                             <Eye className="w-4 h-4 mr-2" /> Reveal Answer
                         </Button>
                     ) : (
-                        <div className="w-full rounded-md border bg-card text-foreground p-4 max-h-72 overflow-y-auto">
+                        <div className="w-full rounded-md border bg-card text-foreground p-4 max-h-[500px] overflow-y-auto">
                             {problem.answer_language ? (
                                 <div className="mb-3 inline-flex rounded border bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground not-prose">
                                     {problem.answer_language}
