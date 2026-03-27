@@ -28,23 +28,23 @@ export function QueueCard() {
     const isComplete = dueCount === 0 && !isLoading
 
     return (
-        <Card className="group relative overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
+        <Card className="group relative overflow-hidden border transition-all duration-100 ease-out hover:-translate-y-0.5">
             {/* Decorative accent */}
             <div className="absolute left-0 top-0 h-1 w-full bg-primary/20" />
 
             <CardHeader className="relative pb-2">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isComplete ? 'bg-green-500/10' : 'bg-primary/10'}`}>
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-md ${isComplete ? 'bg-[#4ade80]/10' : 'bg-primary/10'}`}>
                             {isComplete ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                <CheckCircle2 className="h-5 w-5 text-[#16a34a] dark:text-[#4ade80]" />
                             ) : (
                                 <Clock className="h-5 w-5 text-primary" />
                             )}
                         </div>
                         <div>
-                            <CardTitle className="text-xl font-bold">Today's Queue</CardTitle>
-                            <CardDescription className="text-sm">
+                            <CardTitle className="font-display text-xl font-bold">Today's Queue</CardTitle>
+                            <CardDescription className="text-sm text-muted-foreground">
                                 Problems scheduled for review
                             </CardDescription>
                         </div>
@@ -65,18 +65,18 @@ export function QueueCard() {
                         {/* Progress Section */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Daily Progress</span>
-                                <span className="font-semibold tabular-nums">
+                                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Daily Progress</span>
+                                <span className="font-semibold tabular-nums font-mono text-sm">
                                     {reviewsToday} / {totalToReview}
                                 </span>
                             </div>
                             <div className="relative">
                                 <Progress
                                     value={progressValue}
-                                    className="h-2.5 bg-muted"
+                                    className="h-2 bg-muted"
                                 />
                                 {progressValue === 100 && (
-                                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-green-400/20 to-green-500/20 animate-pulse" />
+                                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#4ade80]/20 to-[#4ade80]/30 animate-pulse" />
                                 )}
                             </div>
                         </div>
@@ -84,9 +84,9 @@ export function QueueCard() {
                         {/* Stats */}
                         <div className="flex items-center gap-6 pt-2">
                             <div className="flex items-center gap-2">
-                                <Zap className="h-4 w-4 text-amber-500" />
-                                <span className="text-2xl font-bold">{dueCount}</span>
-                                <span className="text-sm text-muted-foreground">due</span>
+                                <Zap className="h-4 w-4 text-[#d97706] dark:text-[#fbbf24]" />
+                                <span className="font-display text-2xl font-bold">{dueCount}</span>
+                                <span className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">due</span>
                             </div>
                         </div>
                     </>
@@ -97,8 +97,8 @@ export function QueueCard() {
                 <Link href="/dashboard/review" passHref className="w-full">
                     <Button
                         disabled={isLoading || dueCount === 0}
-                        className={`w-full group/btn transition-all duration-300 ${isComplete
-                            ? 'bg-green-500 hover:bg-green-600'
+                        className={`w-full group/btn transition-all duration-100 ease-out ${isComplete
+                            ? 'bg-[#16a34a] hover:bg-[#16a34a]/90 dark:bg-[#4ade80] dark:text-[#0a0a0a]'
                             : 'bg-primary hover:bg-primary/90'
                             }`}
                         size="lg"
@@ -111,7 +111,7 @@ export function QueueCard() {
                         ) : (
                             <>
                                 Start Review
-                                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-100 ease-out group-hover/btn:translate-x-1" />
                             </>
                         )}
                     </Button>
