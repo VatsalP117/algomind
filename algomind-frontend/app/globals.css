@@ -1,11 +1,11 @@
+/* Design System Fonts - Must be first */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@100..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
-
-/* Design System Fonts */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@100..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
 @theme inline {
   --color-background: var(--background);
@@ -160,37 +160,12 @@
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
   }
 
-  /* Design System Animation */
-  .transition-design {
-    @apply transition-all duration-100 ease-out;
-  }
-
-  /* Design System Cards */
-  .card-ds {
-    @apply bg-card border rounded-lg transition-design;
-    border-color: rgba(255, 255, 255, 0.06);
-  }
-
-  .card-ds:hover {
-    border-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-  }
-
-  :root:not(.dark) .card-ds {
-    border-color: rgba(0, 0, 0, 0.06);
-  }
-
-  :root:not(.dark) .card-ds:hover {
-    border-color: rgba(0, 0, 0, 0.1);
-  }
-
-  /* Focus States */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary;
-  }
-
   /* Section Labels */
   .section-label {
-    @apply font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-foreground);
   }
 }
