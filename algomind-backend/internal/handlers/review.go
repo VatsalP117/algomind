@@ -99,14 +99,22 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		IntervalDays int     `db:"interval_days"`
 		EaseFactor   float64 `db:"ease_factor"`
 		Streak       int     `db:"streak"`
+		Difficulty   string  `db:"difficulty"`
 	}
 
 	stateQuery := `
-		SELECT interval_days, ease_factor, streak
-		FROM review_states
-		WHERE user_id = $1
-		  AND entity_type = $2
-		  AND entity_id = $3
+		SELECT
+			rs.interval_days,
+			rs.ease_factor,
+			rs.streak,
+			COALESCE(p.difficulty, '') AS difficulty
+		FROM review_states rs
+		LEFT JOIN problems p
+		  ON rs.entity_type = 'problem'
+		 AND rs.entity_id = p.id
+		WHERE rs.user_id = $1
+		  AND rs.entity_type = $2
+		  AND rs.entity_id = $3
 	`
 
 	if err := h.DB.Db.GetContext(
@@ -122,12 +130,13 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 	}
 
 	// 2️⃣ Calculate new schedule using existing SRS algorithm
-	result := srs.CalculateReview(
-		req.Rating,
-		current.IntervalDays,
-		current.EaseFactor,
-		current.Streak,
-	)
+	result := srs.CalculateReview(srs.ReviewInput{
+		Rating:          req.Rating,
+		CurrentInterval: current.IntervalDays,
+		CurrentEase:     current.EaseFactor,
+		CurrentStreak:   current.Streak,
+		Difficulty:      current.Difficulty,
+	})
 
 	// 3️⃣ Start transaction
 	tx, err := h.DB.Db.Beginx()

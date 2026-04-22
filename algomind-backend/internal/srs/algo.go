@@ -5,6 +5,21 @@ import (
 	"time"
 )
 
+const (
+	minEaseFactor = 1.3
+	maxEaseFactor = 3.0
+	startingEase  = 2.5
+)
+
+type ReviewInput struct {
+	Rating          string
+	CurrentInterval int
+	CurrentEase     float64
+	CurrentStreak   int
+	Difficulty      string
+	Now             time.Time
+}
+
 type ReviewResult struct {
 	NextReviewAt time.Time
 	IntervalDays int
@@ -12,47 +27,118 @@ type ReviewResult struct {
 	Streak       int
 }
 
-func CalculateReview(rating string, currentInterval int, currentEase float64, currentStreak int) ReviewResult {
-	var newInterval int
-	var newEase = currentEase
-	var newStreak = currentStreak
-
-	switch rating {
-	case "AGAIN":
-		newInterval = 0
-		newStreak = 0
-		newEase = math.Max(1.3, currentEase-0.20)
-
-	case "HARD":
-		newInterval = int(float64(currentInterval) * 1.2)
-		if newInterval == 0 {
-			newInterval = 1
-		}
-		newEase = math.Max(1.3, currentEase-0.15)
-		newStreak++
-
-	case "GOOD":
-		newInterval = int(float64(currentInterval) * currentEase)
-		if newInterval == 0 {
-			newInterval = 1
-		}
-		newStreak++
-
-	case "EASY":
-		newInterval = int(float64(currentInterval) * currentEase * 1.3)
-		if newInterval == 0 {
-			newInterval = 4
-		}
-		newEase += 0.15
-		newStreak++
+func CalculateReview(input ReviewInput) ReviewResult {
+	now := input.Now
+	if now.IsZero() {
+		now = time.Now()
 	}
 
-	nextReview := time.Now().AddDate(0, 0, newInterval)
+	currentEase := clampEase(input.CurrentEase)
+	learningStage := isLearningStage(input.CurrentInterval, input.CurrentStreak)
+
+	newInterval := 0
+	newEase := currentEase
+	newStreak := input.CurrentStreak
+
+	switch input.Rating {
+	case "AGAIN":
+		newStreak = 0
+		if !learningStage {
+			newEase = math.Max(minEaseFactor, currentEase-0.20)
+		}
+
+	case "HARD":
+		newStreak++
+		if learningStage {
+			newInterval = learningInterval(newStreak, input.Rating, input.Difficulty)
+			break
+		}
+		newInterval = scaledInterval(input.CurrentInterval, 1.2)
+		newEase = math.Max(minEaseFactor, currentEase-0.15)
+
+	case "GOOD":
+		newStreak++
+		if learningStage {
+			newInterval = learningInterval(newStreak, input.Rating, input.Difficulty)
+			break
+		}
+		newInterval = scaledInterval(input.CurrentInterval, currentEase*difficultyMultiplier(input.Difficulty))
+
+	case "EASY":
+		newStreak++
+		newEase = math.Min(maxEaseFactor, currentEase+0.15)
+		if learningStage {
+			newInterval = learningInterval(newStreak, input.Rating, input.Difficulty)
+			break
+		}
+		newInterval = scaledInterval(input.CurrentInterval, currentEase*1.3*difficultyMultiplier(input.Difficulty))
+	}
 
 	return ReviewResult{
-		NextReviewAt: nextReview,
+		NextReviewAt: now.AddDate(0, 0, newInterval),
 		IntervalDays: newInterval,
 		EaseFactor:   newEase,
 		Streak:       newStreak,
 	}
+}
+
+func clampEase(ease float64) float64 {
+	if ease == 0 {
+		return startingEase
+	}
+	return math.Min(maxEaseFactor, math.Max(minEaseFactor, ease))
+}
+
+func isLearningStage(currentInterval int, currentStreak int) bool {
+	return currentStreak < 2
+}
+
+func learningInterval(successStreak int, rating string, difficulty string) int {
+	var base int
+
+	switch successStreak {
+	case 1:
+		switch rating {
+		case "EASY":
+			base = 3
+		default:
+			base = 1
+		}
+	case 2:
+		switch rating {
+		case "HARD":
+			base = 3
+		case "EASY":
+			base = 8
+		default:
+			base = 6
+		}
+	default:
+		base = 6
+	}
+
+	if rating == "GOOD" || rating == "EASY" {
+		return scaledInterval(base, difficultyMultiplier(difficulty))
+	}
+
+	return base
+}
+
+func difficultyMultiplier(difficulty string) float64 {
+	switch difficulty {
+	case "EASY":
+		return 1.15
+	case "HARD":
+		return 0.75
+	default:
+		return 1.0
+	}
+}
+
+func scaledInterval(interval int, multiplier float64) int {
+	scaled := int(math.Ceil(float64(interval) * multiplier))
+	if scaled < 1 {
+		return 1
+	}
+	return scaled
 }
