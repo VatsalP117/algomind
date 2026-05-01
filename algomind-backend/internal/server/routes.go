@@ -21,8 +21,9 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 
 	problemRepo := repositories.NewPostgresProblemRepository(db.Db)
 	reviewStateRepo := repositories.NewPostgresReviewStateRepository(db.Db)
+	conceptRepo := repositories.NewPostgresConceptRepository(db.Db)
 
-	problemService := problems.NewService(db, problemRepo, reviewStateRepo, llmClient)
+	problemService := problems.NewService(db, problemRepo, reviewStateRepo, conceptRepo, llmClient)
 	extensionService := extensions.NewService(db, cfg)
 	extensionAuthMiddleware := middleware.NewExtensionAuth(extensionService)
 

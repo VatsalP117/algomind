@@ -2,7 +2,6 @@ package problems
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -52,6 +51,7 @@ type Service struct {
 	db              *database.Service
 	problemRepo     repositories.ProblemRepository
 	reviewStateRepo repositories.ReviewStateRepository
+	conceptRepo     repositories.ConceptRepository
 	llmClient       *llm.Client
 }
 
@@ -59,32 +59,25 @@ func NewService(
 	db *database.Service,
 	problemRepo repositories.ProblemRepository,
 	reviewStateRepo repositories.ReviewStateRepository,
+	conceptRepo repositories.ConceptRepository,
 	llmClient *llm.Client,
 ) *Service {
 	return &Service{
 		db:              db,
 		problemRepo:     problemRepo,
 		reviewStateRepo: reviewStateRepo,
+		conceptRepo:     conceptRepo,
 		llmClient:       llmClient,
 	}
 }
 
 func (s *Service) CreateReviewableProblem(ctx context.Context, input CreateInput) (*CreateResult, error) {
-	var concept struct {
-		UserID *string `db:"user_id"`
-		Title  string  `db:"title"`
-	}
-
-	if err := s.db.Db.GetContext(
-		ctx,
-		&concept,
-		"SELECT user_id, title FROM concepts WHERE id = $1",
-		input.ConceptID,
-	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrInvalidConcept
-		}
+	concept, err := s.conceptRepo.GetByID(ctx, input.ConceptID)
+	if err != nil {
 		return nil, err
+	}
+	if concept == nil {
+		return nil, ErrInvalidConcept
 	}
 	if concept.UserID != nil && *concept.UserID != input.UserID {
 		return nil, ErrConceptNotAccessible

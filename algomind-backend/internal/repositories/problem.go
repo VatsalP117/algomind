@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/dto"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/models"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -181,6 +182,33 @@ func (r *PostgresProblemRepository) UpdateHints(ctx context.Context, userID stri
 		userID,
 	)
 	return err
+}
+
+// ConceptRepository defines the seam for concept persistence.
+type ConceptRepository interface {
+	GetByID(ctx context.Context, id int64) (*models.Concept, error)
+}
+
+// PostgresConceptRepository is the concrete adapter for ConceptRepository.
+type PostgresConceptRepository struct {
+	db *sqlx.DB
+}
+
+// NewPostgresConceptRepository creates a new PostgresConceptRepository.
+func NewPostgresConceptRepository(db *sqlx.DB) *PostgresConceptRepository {
+	return &PostgresConceptRepository{db: db}
+}
+
+func (r *PostgresConceptRepository) GetByID(ctx context.Context, id int64) (*models.Concept, error) {
+	var concept models.Concept
+	err := r.db.GetContext(ctx, &concept, "SELECT id, user_id, base_concept_id, title, description, content, created_at FROM concepts WHERE id = $1", id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &concept, nil
 }
 
 func nullableString(value string) interface{} {
