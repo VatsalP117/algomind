@@ -3,6 +3,7 @@
 This is a monorepo with two projects:
 - `algomind-frontend/` - Next.js 16 frontend
 - `algomind-backend/` - Go backend
+- `algomind-extension/` - Chrome MV3 extension
 
 See project-specific AGENTS.md files for detailed guidance.
 
@@ -24,6 +25,13 @@ make migration_up    # Run migrations
 go vet ./...         # Lint
 go fmt ./...         # Format
 go test ./...        # Tests
+```
+
+### Extension
+```bash
+cd algomind-extension
+npm run build        # Build unpacked extension into dist/
+npm run typecheck    # Type-check extension source
 ```
 
 ## Tech Stack
@@ -56,6 +64,9 @@ algomind/
 │   │   ├── database/      # DB service
 │   │   └── server/        # Server setup
 │   └── migrations/         # SQL migrations
+├── algomind-extension/    # Chrome MV3 package
+│   ├── src/               # Background, popup, content script
+│   └── dist/              # Build output for loading unpacked extension
 ```
 
 ## Environment Variables
@@ -77,3 +88,17 @@ PORT=8080
 - Frontend uses oklch color space with CSS variables
 - Backend uses zerolog for structured logging
 - Migrations are SQL-based in `algomind-backend/migrations/`
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as local markdown files under `.scratch/<feature>/` in this repo. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context layout. A `CONTEXT-MAP.md` at the repo root points to per-project `CONTEXT.md` files and `docs/adr/` directories. See `docs/agents/domain.md`.
