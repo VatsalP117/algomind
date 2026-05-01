@@ -55,8 +55,8 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 	if strings.TrimSpace(req.Link) != "" {
 		if canonicalURL, slug, err := leetcode.NormalizeProblemURL(req.Link); err == nil {
 			link = canonicalURL
-			externalSource = stringPtr("leetcode")
-			externalProblemKey = stringPtr(slug)
+			externalSource = repositories.StringPtr("leetcode")
+			externalProblemKey = repositories.StringPtr(slug)
 		}
 	}
 

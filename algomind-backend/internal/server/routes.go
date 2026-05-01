@@ -32,6 +32,7 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	reviewLogRepo := repositories.NewPostgresReviewLogRepository(db.Db)
 	userRepo := repositories.NewPostgresUserRepository(db.Db)
 	reviewService := reviews.NewService(db, reviewRepo, reviewLogRepo, userRepo)
+	captureRepo := repositories.NewPostgresCaptureRepository(db.Db)
 
 	userHandler := handlers.NewUserHandler(db)
 	problemHandler := handlers.NewProblemHandler(problemRepo, reviewStateRepo, problemService)
@@ -41,7 +42,7 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	leetcodeHandler := handlers.NewLeetCodeHandler()
 	folderHandler := handlers.NewConceptFolderHandler(db)
 	extensionHandler := handlers.NewExtensionHandler(extensionService)
-	problemCaptureHandler := handlers.NewProblemCaptureHandler(db, leetcodeClient, problemService)
+	problemCaptureHandler := handlers.NewProblemCaptureHandler(captureRepo, leetcodeClient, problemService)
 
 	api := e.Group("/api/v1")
 
