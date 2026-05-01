@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/llm"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/repositories"
 	"github.com/jackc/pgx/v5/pgconn"
 	zlog "github.com/rs/zerolog/log"
 )
@@ -49,14 +49,23 @@ type CreateResult struct {
 }
 
 type Service struct {
-	db        *database.Service
-	llmClient *llm.Client
+	db              *database.Service
+	problemRepo     repositories.ProblemRepository
+	reviewStateRepo repositories.ReviewStateRepository
+	llmClient       *llm.Client
 }
 
-func NewService(db *database.Service, llmClient *llm.Client) *Service {
+func NewService(
+	db *database.Service,
+	problemRepo repositories.ProblemRepository,
+	reviewStateRepo repositories.ReviewStateRepository,
+	llmClient *llm.Client,
+) *Service {
 	return &Service{
-		db:        db,
-		llmClient: llmClient,
+		db:              db,
+		problemRepo:     problemRepo,
+		reviewStateRepo: reviewStateRepo,
+		llmClient:       llmClient,
 	}
 }
 
@@ -81,13 +90,13 @@ func (s *Service) CreateReviewableProblem(ctx context.Context, input CreateInput
 		return nil, ErrConceptNotAccessible
 	}
 
-	if duplicate, err := s.findDuplicateProblem(ctx, input.UserID, input.ExternalSource, input.ExternalProblemKey); err != nil {
+	if duplicateID, err := s.problemRepo.FindDuplicate(ctx, input.UserID, input.ExternalSource, input.ExternalProblemKey); err != nil {
 		return nil, err
-	} else if duplicate != nil {
-		return nil, duplicate
+	} else if duplicateID != 0 {
+		return nil, &DuplicateProblemError{ProblemID: duplicateID}
 	}
 
-	storedHints := strings.TrimSpace(input.Hints)
+	storedHints := input.Hints
 	if input.GenerateHints {
 		storedHints = ""
 	}
@@ -103,75 +112,33 @@ func (s *Service) CreateReviewableProblem(ctx context.Context, input CreateInput
 		}
 	}()
 
-	insertProblemQuery := `
-		INSERT INTO problems (
-			user_id,
-			concept_id,
-			title,
-			link,
-			difficulty,
-			summary,
-			description,
-			answer,
-			answer_language,
-			hints,
-			external_source,
-			external_problem_key,
-			created_at
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()
-		)
-		RETURNING id
-	`
-
-	var problemID int64
-	if err := tx.QueryRowContext(
-		ctx,
-		insertProblemQuery,
-		input.UserID,
-		input.ConceptID,
-		input.Title,
-		nullableString(input.Link),
-		input.Difficulty,
-		input.Summary,
-		nullableString(input.Description),
-		input.Answer,
-		input.AnswerLanguage,
-		storedHints,
-		input.ExternalSource,
-		input.ExternalProblemKey,
-	).Scan(&problemID); err != nil {
-		if duplicate, lookupErr := s.lookupDuplicateAfterInsertFailure(ctx, input.UserID, input.ExternalSource, input.ExternalProblemKey, err); lookupErr != nil {
-			return nil, lookupErr
-		} else if duplicate != nil {
-			return nil, duplicate
+	problemID, err := s.problemRepo.CreateWithinTx(ctx, tx, repositories.CreateProblemInput{
+		UserID:             input.UserID,
+		ConceptID:          input.ConceptID,
+		Title:              input.Title,
+		Link:               input.Link,
+		Difficulty:         input.Difficulty,
+		Summary:            input.Summary,
+		Description:        input.Description,
+		Answer:             input.Answer,
+		AnswerLanguage:     input.AnswerLanguage,
+		Hints:              storedHints,
+		ExternalSource:     input.ExternalSource,
+		ExternalProblemKey: input.ExternalProblemKey,
+	})
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			if duplicateID, lookupErr := s.problemRepo.FindDuplicate(ctx, input.UserID, input.ExternalSource, input.ExternalProblemKey); lookupErr != nil {
+				return nil, lookupErr
+			} else if duplicateID != 0 {
+				return nil, &DuplicateProblemError{ProblemID: duplicateID}
+			}
 		}
-
 		return nil, err
 	}
 
-	insertReviewStateQuery := `
-		INSERT INTO review_states (
-			user_id,
-			entity_type,
-			entity_id,
-			next_review_at,
-			interval_days,
-			ease_factor,
-			streak,
-			created_at
-		) VALUES (
-			$1, 'problem', $2, $3, 0, 2.5, 0, NOW()
-		)
-	`
-
-	if _, err := tx.ExecContext(
-		ctx,
-		insertReviewStateQuery,
-		input.UserID,
-		problemID,
-		time.Now(),
-	); err != nil {
+	if err := s.reviewStateRepo.CreateForProblemWithinTx(ctx, tx, input.UserID, problemID); err != nil {
 		return nil, err
 	}
 
@@ -197,50 +164,6 @@ func (s *Service) CreateReviewableProblem(ctx context.Context, input CreateInput
 		ID:                   problemID,
 		HintGenerationQueued: hintGenerationQueued,
 	}, nil
-}
-
-func (s *Service) findDuplicateProblem(
-	ctx context.Context,
-	userID string,
-	externalSource *string,
-	externalProblemKey *string,
-) (*DuplicateProblemError, error) {
-	if externalSource == nil || externalProblemKey == nil || *externalSource == "" || *externalProblemKey == "" {
-		return nil, nil
-	}
-
-	var existingID int64
-	err := s.db.Db.GetContext(
-		ctx,
-		&existingID,
-		`SELECT id FROM problems WHERE user_id = $1 AND external_source = $2 AND external_problem_key = $3`,
-		userID,
-		*externalSource,
-		*externalProblemKey,
-	)
-	if err == nil {
-		return &DuplicateProblemError{ProblemID: existingID}, nil
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-
-	return nil, err
-}
-
-func (s *Service) lookupDuplicateAfterInsertFailure(
-	ctx context.Context,
-	userID string,
-	externalSource *string,
-	externalProblemKey *string,
-	insertErr error,
-) (*DuplicateProblemError, error) {
-	var pgErr *pgconn.PgError
-	if !errors.As(insertErr, &pgErr) || pgErr.Code != "23505" {
-		return nil, nil
-	}
-
-	return s.findDuplicateProblem(ctx, userID, externalSource, externalProblemKey)
 }
 
 func (s *Service) enqueueHintGeneration(userID string, problemID int64, req llm.HintRequest) bool {
@@ -280,20 +203,7 @@ func (s *Service) enqueueHintGeneration(userID string, problemID int64, req llm.
 		dbCtx, dbCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer dbCancel()
 
-		result, err := s.db.Db.ExecContext(
-			dbCtx,
-			`
-				UPDATE problems
-				SET hints = $1
-				WHERE id = $2
-				  AND user_id = $3
-				  AND COALESCE(NULLIF(btrim(hints), ''), '') = ''
-			`,
-			hints,
-			problemID,
-			userID,
-		)
-		if err != nil {
+		if err := s.problemRepo.UpdateHints(dbCtx, userID, problemID, hints); err != nil {
 			logger.Error().
 				Err(err).
 				Int64("duration_ms", time.Since(jobStartedAt).Milliseconds()).
@@ -301,30 +211,13 @@ func (s *Service) enqueueHintGeneration(userID string, problemID int64, req llm.
 			return
 		}
 
-		rowsAffected, err := result.RowsAffected()
-		if err == nil && rowsAffected > 0 {
-			logger.Info().
-				Int64("duration_ms", time.Since(jobStartedAt).Milliseconds()).
-				Int("hint_chars", len(hints)).
-				Int64("rows_affected", rowsAffected).
-				Msg("Stored generated hints")
-			return
-		}
-
 		logger.Info().
 			Int64("duration_ms", time.Since(jobStartedAt).Milliseconds()).
 			Int("hint_chars", len(hints)).
-			Msg("Skipped storing generated hints because hints were already present")
+			Msg("Stored generated hints")
 	}()
 
 	return true
-}
-
-func nullableString(value string) interface{} {
-	if strings.TrimSpace(value) == "" {
-		return nil
-	}
-	return value
 }
 
 func derefString(value *string) string {

@@ -4,25 +4,30 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/dto"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/leetcode"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/problems"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/repositories"
 	"github.com/labstack/echo/v4"
 )
 
 type ProblemHandler struct {
-	DB             *database.Service
-	ProblemService *problems.Service
+	ProblemRepo      repositories.ProblemRepository
+	ReviewStateRepo  repositories.ReviewStateRepository
+	ProblemService   *problems.Service
 }
 
-func NewProblemHandler(db *database.Service, problemService *problems.Service) *ProblemHandler {
+func NewProblemHandler(
+	problemRepo repositories.ProblemRepository,
+	reviewStateRepo repositories.ReviewStateRepository,
+	problemService *problems.Service,
+) *ProblemHandler {
 	return &ProblemHandler{
-		DB:             db,
-		ProblemService: problemService,
+		ProblemRepo:     problemRepo,
+		ReviewStateRepo: reviewStateRepo,
+		ProblemService:  problemService,
 	}
 }
 
@@ -98,23 +103,12 @@ func (h *ProblemHandler) CreateProblem(c echo.Context) error {
 
 func (h *ProblemHandler) GetAllUserProblems(c echo.Context) error {
 	log.Printf("Received request to get all user problems")
-	userId := c.Get("user_id").(string)
+	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
 
-	fetchUserProblemsQuery := `
-		SELECT 
-			p.id,
-			p.title,
-			p.difficulty,
-			c.title AS tag,
-			p.created_at::text AS created_at
-		FROM problems p
-		LEFT JOIN concepts c ON p.concept_id = c.id
-		WHERE p.user_id = $1
-	`
-	var problems []dto.UserProblemsResponse
-	if err := h.DB.Db.SelectContext(ctx, &problems, fetchUserProblemsQuery, userId); err != nil {
-		log.Printf("Database error fetching user problems for user %s: %v", userId, err)
+	problems, err := h.ProblemRepo.GetAllByUser(ctx, userID)
+	if err != nil {
+		log.Printf("Database error fetching user problems for user %s: %v", userID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to fetch user problems",
@@ -125,115 +119,70 @@ func (h *ProblemHandler) GetAllUserProblems(c echo.Context) error {
 
 func (h *ProblemHandler) GetIndividualUserProblem(c echo.Context) error {
 	log.Printf("Received request to get individual user problem")
-	problemId := c.Param("problem_id")
-	if problemId == "" {
+	problemID := c.Param("problem_id")
+	if problemID == "" {
 		return echo.NewHTTPError(
 			http.StatusBadRequest,
 			"problem ID is required",
 		)
 	}
-	userId := c.Get("user_id").(string)
+	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
 
-	fetchUserProblemQuery := `
-		SELECT 
-			p.id,
-			p.title,
-			p.difficulty,
-			c.title AS tag,
-			p.created_at::text AS created_at,
-			p.description,
-			p.answer,
-			p.answer_language,
-			p.hints
-		FROM problems p
-		LEFT JOIN concepts c ON p.concept_id = c.id
-		WHERE p.user_id = $1 AND p.id = $2
-	`
-	var problem dto.UserIndividualProblemResponse
-	if err := h.DB.Db.GetContext(ctx, &problem, fetchUserProblemQuery, userId, problemId); err != nil {
-		log.Printf("Database error fetching user problem for user %s, problem ID %s: %v", userId, problemId, err)
+	problem, err := h.ProblemRepo.GetByIDAndUser(ctx, userID, problemID)
+	if err != nil {
+		log.Printf("Database error fetching user problem for user %s, problem ID %s: %v", userID, problemID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to fetch user problem",
 		)
+	}
+	if problem == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "problem not found")
 	}
 	return c.JSON(http.StatusOK, problem)
 }
 
 func (h *ProblemHandler) DeleteProblem(c echo.Context) error {
 	log.Printf("Received request to delete problem")
-	problemId := c.Param("problem_id")
-	if problemId == "" {
+	problemID := c.Param("problem_id")
+	if problemID == "" {
 		return echo.NewHTTPError(
 			http.StatusBadRequest,
 			"problem ID is required",
 		)
 	}
-	userId := c.Get("user_id").(string)
+	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
 
-	deleteProblemQuery := `
-		DELETE FROM problems
-		WHERE user_id = $1 AND id = $2
-	`
-	if _, err := h.DB.Db.ExecContext(ctx, deleteProblemQuery, userId, problemId); err != nil {
-		log.Printf("Database error deleting problem for user %s, problem ID %s: %v", userId, problemId, err)
+	if err := h.ProblemRepo.Delete(ctx, userID, problemID); err != nil {
+		log.Printf("Database error deleting problem for user %s, problem ID %s: %v", userID, problemID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to delete problem",
 		)
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"id": problemId,
+		"id": problemID,
 	})
 }
 
 func (h *ProblemHandler) AddProblemToReviewQueue(c echo.Context) error {
 	log.Printf("Received request to add problem to review queue")
 
-	problemId := c.Param("problem_id")
-	if problemId == "" {
+	problemID := c.Param("problem_id")
+	if problemID == "" {
 		return echo.NewHTTPError(
 			http.StatusBadRequest,
 			"problem ID is required",
 		)
 	}
 
-	userId := c.Get("user_id").(string)
+	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
 
-	query := `
-		INSERT INTO review_states (
-			user_id,
-			entity_type,
-			entity_id,
-			next_review_at,
-			interval_days,
-			ease_factor,
-			streak,
-			created_at
-		)
-		VALUES (
-			$1,
-			'problem',
-			$2,
-			$3,
-			0,
-			2.5,
-			0,
-			NOW()
-		)
-		ON CONFLICT (user_id, entity_type, entity_id)
-		DO UPDATE SET
-			next_review_at = EXCLUDED.next_review_at,
-			interval_days = 0,
-			ease_factor = 2.5
-	`
-
-	if _, err := h.DB.Db.ExecContext(ctx, query, userId, problemId, time.Now()); err != nil {
-
-		log.Printf("Database error upserting review state for user %s, problem ID %s: %v", userId, problemId, err)
+	if err := h.ReviewStateRepo.UpsertForProblem(ctx, userID, problemID); err != nil {
+		log.Printf("Database error upserting review state for user %s, problem ID %s: %v", userID, problemID, err)
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
 			"failed to add problem to review queue",
@@ -241,6 +190,6 @@ func (h *ProblemHandler) AddProblemToReviewQueue(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"id": problemId,
+		"id": problemID,
 	})
 }

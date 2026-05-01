@@ -2,27 +2,32 @@ package server
 
 import (
 	"github.com/VatsalP117/algomind/algomind-backend/internal/extensions"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/handlers"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/leetcode"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/middleware"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/problems"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/repositories"
 	"github.com/labstack/echo/v4"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
-	"github.com/VatsalP117/algomind/algomind-backend/internal/handlers"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/llm"
-	"github.com/VatsalP117/algomind/algomind-backend/internal/middleware"
-	"github.com/VatsalP117/algomind/algomind-backend/internal/problems"
 )
 
 func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	authMiddleware := middleware.New(db)
 	llmClient := llm.NewClient(cfg)
 	leetcodeClient := leetcode.NewClient()
-	problemService := problems.NewService(db, llmClient)
+
+	problemRepo := repositories.NewPostgresProblemRepository(db.Db)
+	reviewStateRepo := repositories.NewPostgresReviewStateRepository(db.Db)
+
+	problemService := problems.NewService(db, problemRepo, reviewStateRepo, llmClient)
 	extensionService := extensions.NewService(db, cfg)
 	extensionAuthMiddleware := middleware.NewExtensionAuth(extensionService)
 
 	userHandler := handlers.NewUserHandler(db)
-	problemHandler := handlers.NewProblemHandler(db, problemService)
+	problemHandler := handlers.NewProblemHandler(problemRepo, reviewStateRepo, problemService)
 	reviewHandler := handlers.NewReviewHandler(db)
 	conceptHandler := handlers.NewConceptHandler(db)
 	metricsHandler := handlers.NewMetricsHandler(db)
