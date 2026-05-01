@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/VatsalP117/algomind/algomind-backend/internal/extensions"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/leetcode"
 	"github.com/labstack/echo/v4"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
@@ -8,55 +10,82 @@ import (
 	"github.com/VatsalP117/algomind/algomind-backend/internal/handlers"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/llm"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/middleware"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/problems"
 )
 
 func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	authMiddleware := middleware.New(db)
 	llmClient := llm.NewClient(cfg)
+	leetcodeClient := leetcode.NewClient()
+	problemService := problems.NewService(db, llmClient)
+	extensionService := extensions.NewService(db, cfg)
+	extensionAuthMiddleware := middleware.NewExtensionAuth(extensionService)
 
 	userHandler := handlers.NewUserHandler(db)
-	problemHandler := handlers.NewProblemHandler(db, llmClient)
+	problemHandler := handlers.NewProblemHandler(db, problemService)
 	reviewHandler := handlers.NewReviewHandler(db)
 	conceptHandler := handlers.NewConceptHandler(db)
 	metricsHandler := handlers.NewMetricsHandler(db)
 	leetcodeHandler := handlers.NewLeetCodeHandler()
-
 	folderHandler := handlers.NewConceptFolderHandler(db)
+	extensionHandler := handlers.NewExtensionHandler(extensionService)
+	problemCaptureHandler := handlers.NewProblemCaptureHandler(db, leetcodeClient, problemService)
 
 	api := e.Group("/api/v1")
-	api.Use(authMiddleware.RequireAuth)
 
-	api.GET("/profile", userHandler.GetProfile)
+	api.POST("/extension/auth/pair", extensionHandler.Pair)
+	api.POST("/extension/auth/refresh", extensionHandler.Refresh)
+
+	extensionAPI := api.Group("/extension")
+	extensionAPI.Use(extensionAuthMiddleware.RequireAuth)
+	extensionAPI.POST("/auth/logout", extensionHandler.Logout)
+	extensionAPI.POST("/captures", problemCaptureHandler.CreateCaptureFromExtension)
+	extensionAPI.GET("/captures/by-external-key/:source/:key", problemCaptureHandler.GetCaptureStatusByExternalKey)
+
+	appAPI := api.Group("")
+	appAPI.Use(authMiddleware.RequireAuth)
+
+	appAPI.GET("/profile", userHandler.GetProfile)
 
 	// Concepts CRUD
-	api.GET("/concepts", conceptHandler.ListConcepts)
-	api.POST("/concepts", conceptHandler.CreateConcept)
-	api.PUT("/concepts/:id", conceptHandler.UpdateConcept)
-	api.DELETE("/concepts/:id", conceptHandler.DeleteConcept)
-	api.POST("/concepts/:id/reset", conceptHandler.ResetConcept)
+	appAPI.GET("/concepts", conceptHandler.ListConcepts)
+	appAPI.POST("/concepts", conceptHandler.CreateConcept)
+	appAPI.PUT("/concepts/:id", conceptHandler.UpdateConcept)
+	appAPI.DELETE("/concepts/:id", conceptHandler.DeleteConcept)
+	appAPI.POST("/concepts/:id/reset", conceptHandler.ResetConcept)
 
 	// Concept Folders
-	api.GET("/concept-folders", folderHandler.ListFolders)
-	api.POST("/concept-folders", folderHandler.CreateFolder)
-	api.PUT("/concept-folders/:id", folderHandler.UpdateFolder)
-	api.DELETE("/concept-folders/:id", folderHandler.DeleteFolder)
-	api.PUT("/concept-folder-items", folderHandler.AssignToFolder)
-	api.DELETE("/concept-folder-items/:concept_id", folderHandler.RemoveFromFolder)
+	appAPI.GET("/concept-folders", folderHandler.ListFolders)
+	appAPI.POST("/concept-folders", folderHandler.CreateFolder)
+	appAPI.PUT("/concept-folders/:id", folderHandler.UpdateFolder)
+	appAPI.DELETE("/concept-folders/:id", folderHandler.DeleteFolder)
+	appAPI.PUT("/concept-folder-items", folderHandler.AssignToFolder)
+	appAPI.DELETE("/concept-folder-items/:concept_id", folderHandler.RemoveFromFolder)
 
-	api.POST("/problems", problemHandler.CreateProblem)
-	api.GET("/problems", problemHandler.GetAllUserProblems)
-	api.GET("/problems/:problem_id", problemHandler.GetIndividualUserProblem)
-	api.DELETE("/problems/:problem_id", problemHandler.DeleteProblem)
-	api.POST("/problems/add-to-review-queue/:problem_id", problemHandler.AddProblemToReviewQueue)
+	appAPI.POST("/problems", problemHandler.CreateProblem)
+	appAPI.GET("/problems", problemHandler.GetAllUserProblems)
+	appAPI.GET("/problems/:problem_id", problemHandler.GetIndividualUserProblem)
+	appAPI.DELETE("/problems/:problem_id", problemHandler.DeleteProblem)
+	appAPI.POST("/problems/add-to-review-queue/:problem_id", problemHandler.AddProblemToReviewQueue)
 
-	api.GET("/reviews/queue", reviewHandler.GetQueue)
-	api.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
+	appAPI.GET("/problem-captures", problemCaptureHandler.ListCaptures)
+	appAPI.GET("/problem-captures/:capture_id", problemCaptureHandler.GetCapture)
+	appAPI.POST("/problem-captures/:capture_id/retry-enrichment", problemCaptureHandler.RetryEnrichment)
+	appAPI.POST("/problem-captures/:capture_id/archive", problemCaptureHandler.ArchiveCapture)
+	appAPI.POST("/problem-captures/:capture_id/convert", problemCaptureHandler.ConvertCapture)
 
-	api.GET("/leetcode/fetch", leetcodeHandler.FetchProblem)
-	api.GET("/leetcode/fetch/direct", leetcodeHandler.FetchProblemDirectLeetCode)
+	appAPI.POST("/extension/pairing-codes", extensionHandler.CreatePairingCode)
+	appAPI.GET("/extension/installations", extensionHandler.ListInstallations)
+	appAPI.DELETE("/extension/installations/:installation_id", extensionHandler.RevokeInstallation)
 
-	api.GET("/metrics/dashboard", metricsHandler.GetDashboard)
-	api.GET("/metrics/recall", metricsHandler.GetRecallQuality)
-	api.GET("/metrics/mastery", metricsHandler.GetTopicMastery)
-	api.GET("/metrics/most-used-language", metricsHandler.GetMostUsedLanguage)
+	appAPI.GET("/reviews/queue", reviewHandler.GetQueue)
+	appAPI.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
+
+	appAPI.GET("/leetcode/fetch", leetcodeHandler.FetchProblem)
+	appAPI.GET("/leetcode/fetch/direct", leetcodeHandler.FetchProblemDirectLeetCode)
+
+	appAPI.GET("/metrics/dashboard", metricsHandler.GetDashboard)
+	appAPI.GET("/metrics/recall", metricsHandler.GetRecallQuality)
+	appAPI.GET("/metrics/mastery", metricsHandler.GetTopicMastery)
+	appAPI.GET("/metrics/most-used-language", metricsHandler.GetMostUsedLanguage)
 }

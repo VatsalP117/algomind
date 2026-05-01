@@ -1,20 +1,10 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
+import next from 'eslint-config-next'
+import prettier from 'eslint-config-prettier'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-})
-
-const eslintConfig = [
-    // 1. Extend Next.js core vitals and Prettier
-    ...compat.extends('next/core-web-vitals', 'prettier'),
-
-    // 2. Define custom rules
+export default [
+    ...next,
+    prettier,
     {
         plugins: {
             'simple-import-sort': simpleImportSort,
@@ -25,17 +15,11 @@ const eslintConfig = [
                 'error',
                 {
                     groups: [
-                        // Packages `react` related packages come first.
                         ['^react', '^@?\\w'],
-                        // Internal packages.
                         ['^(@|components)(/.*|$)'],
-                        // Side effect imports.
                         ['^\\u0000'],
-                        // Parent imports. Put `..` last.
                         ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
-                        // Other relative imports. Put same-folder imports and `.` last.
                         ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
-                        // Style imports.
                         ['^.+\\.?(css)$'],
                     ],
                 },
@@ -43,5 +27,3 @@ const eslintConfig = [
         },
     },
 ]
-
-export default eslintConfig

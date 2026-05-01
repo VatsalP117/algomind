@@ -9,13 +9,17 @@ import (
 )
 
 type Config struct {
-	Port           string
-	ClerkSecretKey string
-	DatabaseURL    string
-	LLMBaseURL     string
-	LLMAPIKey      string
-	LLMModel       string
-	LLMTimeoutSecs int
+	Port                            string
+	ClerkSecretKey                  string
+	DatabaseURL                     string
+	LLMBaseURL                      string
+	LLMAPIKey                       string
+	LLMModel                        string
+	LLMTimeoutSecs                  int
+	ExtensionTokenSecret            string
+	ExtensionAccessTokenTTLSeconds  int
+	ExtensionRefreshTokenTTLSeconds int
+	ExtensionPairingCodeTTLSeconds  int
 }
 
 func Load() *Config {
@@ -25,13 +29,17 @@ func Load() *Config {
 	}
 
 	cfg := &Config{
-		Port:           getEnv("PORT", "8080"), // Default to 8080 if PORT is not set
-		ClerkSecretKey: getEnv("CLERK_SECRET_KEY", ""),
-		DatabaseURL:    getEnv("DATABASE_URL", ""),
-		LLMBaseURL:     getEnvWithFallback("KIMI_BASE_URL", "LLM_BASE_URL", "https://api.moonshot.ai"),
-		LLMAPIKey:      getEnvWithFallback("KIMI_API_KEY", "LLM_API_KEY", ""),
-		LLMModel:       getEnvWithFallback("KIMI_MODEL", "LLM_MODEL", "kimi-k2.5"),
-		LLMTimeoutSecs: getEnvAsIntWithFallback("KIMI_TIMEOUT_SECS", "LLM_TIMEOUT_SECS", 120),
+		Port:                            getEnv("PORT", "8080"), // Default to 8080 if PORT is not set
+		ClerkSecretKey:                  getEnv("CLERK_SECRET_KEY", ""),
+		DatabaseURL:                     getEnv("DATABASE_URL", ""),
+		LLMBaseURL:                      getEnvWithFallback("KIMI_BASE_URL", "LLM_BASE_URL", "https://api.moonshot.ai"),
+		LLMAPIKey:                       getEnvWithFallback("KIMI_API_KEY", "LLM_API_KEY", ""),
+		LLMModel:                        getEnvWithFallback("KIMI_MODEL", "LLM_MODEL", "kimi-k2.5"),
+		LLMTimeoutSecs:                  getEnvAsIntWithFallback("KIMI_TIMEOUT_SECS", "LLM_TIMEOUT_SECS", 120),
+		ExtensionTokenSecret:            getEnv("EXTENSION_TOKEN_SECRET", ""),
+		ExtensionAccessTokenTTLSeconds:  getEnvAsInt("EXTENSION_ACCESS_TOKEN_TTL_SECS", 900),
+		ExtensionRefreshTokenTTLSeconds: getEnvAsInt("EXTENSION_REFRESH_TOKEN_TTL_SECS", 2592000),
+		ExtensionPairingCodeTTLSeconds:  getEnvAsInt("EXTENSION_PAIRING_CODE_TTL_SECS", 300),
 	}
 
 	if cfg.ClerkSecretKey == "" {

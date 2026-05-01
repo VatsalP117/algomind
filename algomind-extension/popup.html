@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Algomind Quick Save</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <div>
+          <p class="eyebrow">Algomind</p>
+          <h1>Quick Save</h1>
+        </div>
+        <button id="open-dashboard" class="button button-ghost" type="button">
+          Open app
+        </button>
+      </header>
+
+      <section id="pair-section" class="card hidden">
+        <h2>Pair this browser</h2>
+        <p class="muted">
+          Generate a one-time code in Algomind at Dashboard → Extension, then
+          paste it here.
+        </p>
+        <label class="field">
+          <span>Pairing code</span>
+          <input id="pairing-code" placeholder="ABCD-72FQ" />
+        </label>
+        <button id="pair-button" class="button" type="button">Pair extension</button>
+        <button id="open-options" class="button button-ghost" type="button">
+          Settings
+        </button>
+      </section>
+
+      <section id="unsupported-section" class="card hidden">
+        <h2>Open a LeetCode problem</h2>
+        <p class="muted">
+          Navigate to a LeetCode problem page, then use Quick Save to send it to
+          your Algomind inbox.
+        </p>
+      </section>
+
+      <section id="ready-section" class="card hidden">
+        <div class="row space-between">
+          <div>
+            <p class="eyebrow">Ready to save</p>
+            <h2 id="problem-title">LeetCode problem</h2>
+          </div>
+          <span id="session-badge" class="badge">Paired</span>
+        </div>
+        <p id="problem-url" class="muted small"></p>
+        <button id="save-button" class="button" type="button">
+          Save to Algomind
+        </button>
+      </section>
+
+      <section id="result-section" class="card hidden">
+        <p id="result-status" class="status"></p>
+        <p id="result-details" class="muted"></p>
+        <div class="actions">
+          <button id="open-result" class="button" type="button">
+            Open in Algomind
+          </button>
+          <button id="save-another" class="button button-ghost" type="button">
+            Back
+          </button>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p id="session-label" class="muted small"></p>
+        <button id="disconnect-button" class="button button-ghost hidden" type="button">
+          Disconnect
+        </button>
+      </footer>
+    </main>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

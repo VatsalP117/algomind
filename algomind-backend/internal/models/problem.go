@@ -11,11 +11,13 @@ type Problem struct {
 	Link       *string `db:"link" json:"link"`
 	Difficulty string  `db:"difficulty" json:"difficulty"`
 
-	Summary     string  `db:"summary" json:"summary"`
-	Description *string `db:"description" json:"description"`
-	Answer      string  `db:"answer" json:"answer"`
-	AnswerLang  *string `db:"answer_language" json:"answer_language"`
-	Hints       *string `db:"hints" json:"hints"`
+	Summary            string  `db:"summary" json:"summary"`
+	Description        *string `db:"description" json:"description"`
+	Answer             string  `db:"answer" json:"answer"`
+	AnswerLang         *string `db:"answer_language" json:"answer_language"`
+	Hints              *string `db:"hints" json:"hints"`
+	ExternalSource     *string `db:"external_source" json:"external_source"`
+	ExternalProblemKey *string `db:"external_problem_key" json:"external_problem_key"`
 
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }

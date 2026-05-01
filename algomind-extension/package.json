@@ -1,0 +1,16 @@
+{
+  "name": "algomind-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc && mkdir -p dist && cp manifest.json popup.html options.html styles.css dist/",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.29",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,11 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Controller,useForm } from 'react-hook-form'
+import { toast } from 'react-hot-toast'
+import {
+    CheckCircle,
+    ChevronDown,
+    ChevronUp,
+    Eye,
+    Loader2,
+    Sparkles,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
     Select,
     SelectContent,
@@ -13,21 +25,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
 import { useCreateProblem } from '@/features/add-problem/api/useCreateProblem'
 import { useFetchLeetCode } from '@/features/add-problem/api/useFetchLeetCode'
-import {
-    Loader2,
-    Sparkles,
-    CheckCircle,
-    ChevronDown,
-    ChevronUp,
-    Eye,
-} from 'lucide-react'
-import { toast } from 'react-hot-toast'
-
-import { useForm, Controller } from 'react-hook-form'
 import { useConcepts } from '@/features/edit-concepts/api/useConcepts'
+import { useProblemCapture } from '@/features/problem-captures/api/useProblemCaptures'
+
 import { useMostUsedLanguage } from '../../api/useGetMostUsedLanguage'
 
 type FormFields = {
@@ -75,10 +78,26 @@ function cleanLeetCodeUrl(url: string): string {
     }
 }
 
-export default function SubmitProblemForm() {
+export default function SubmitProblemForm({
+    captureId,
+}: {
+    captureId?: number | null
+}) {
+    const router = useRouter()
     const { data: mostUsedLanguage } = useMostUsedLanguage()
+    const { data: capture, isLoading: isCaptureLoading } = useProblemCapture(
+        captureId,
+    )
     const form = useForm<FormFields>({
         defaultValues: {
+            title: '',
+            problemLink: '',
+            concept: '',
+            difficulty: '',
+            summary: '',
+            description: '',
+            answer: '',
+            hints: '',
             answerLanguage: 'python',
             generateHints: false,
         },
@@ -141,6 +160,32 @@ export default function SubmitProblemForm() {
         }
     }, [generateHints, setValue])
 
+    useEffect(() => {
+        if (!capture || !captureId) return
+
+        resetFormState({
+            title:
+                capture.title ||
+                capture.fallback_title ||
+                capture.external_problem_key,
+            problemLink: capture.canonical_url,
+            concept: '',
+            difficulty:
+                capture.difficulty ||
+                capture.fallback_difficulty ||
+                '',
+            summary:
+                capture.title ||
+                capture.fallback_title ||
+                capture.external_problem_key,
+            description: capture.description_html || '',
+            answer: '',
+            answerLanguage: mostUsedLanguage || 'python',
+            hints: '',
+            generateHints: false,
+        })
+    }, [capture, captureId, mostUsedLanguage, resetFormState])
+
     const onSubmit = async (data: FormFields) => {
         const conceptId =
             data.concept && data.concept !== 'none'
@@ -149,13 +194,19 @@ export default function SubmitProblemForm() {
         const answerLanguage =
             data.answerLanguage === 'other' ? undefined : data.answerLanguage
 
-        await mutateAsync({
+        const result = await mutateAsync({
             ...data,
+            captureId,
             hints: data.generateHints ? '' : data.hints,
             answerLanguage,
             conceptId: conceptId,
             difficulty: data.difficulty || 'EASY',
         })
+
+        if (captureId) {
+            router.replace(`/dashboard/library/problem/${result.id}`)
+            return
+        }
 
         resetFormState({
             title: '',
@@ -175,6 +226,14 @@ export default function SubmitProblemForm() {
         <form onSubmit={handleSubmit(onSubmit)}>
             <Card>
                 <CardContent className="space-y-6">
+                    {captureId && (
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+                            You are importing a quick-saved extension capture.
+                            Finish the missing review details below to add it to
+                            your library.
+                        </div>
+                    )}
+
                     {/* Problem Link Field - Now at the top */}
                     <div className="space-y-2">
                         <Label htmlFor="problemLink">Problem Link</Label>
@@ -186,6 +245,11 @@ export default function SubmitProblemForm() {
                                 className="pr-10"
                             />
                             {isFetching && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                </div>
+                            )}
+                            {isCaptureLoading && (
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                 </div>
@@ -449,8 +513,15 @@ export default function SubmitProblemForm() {
                     >
                         Reset
                     </Button>
-                    <Button type="submit" disabled={isSubmitting || isFetching}>
-                        {isSubmitting ? 'Saving...' : 'Save Problem'}
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting || isFetching || isCaptureLoading}
+                    >
+                        {isSubmitting
+                            ? 'Saving...'
+                            : captureId
+                              ? 'Import Problem'
+                              : 'Save Problem'}
                     </Button>
                 </CardFooter>
             </Card>

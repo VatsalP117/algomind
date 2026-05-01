@@ -1,17 +1,23 @@
-'use client'
+import { Link as LinkIcon } from 'lucide-react'
 
 import HeadingSection from '@/components/shared/heading-section'
 import {
     Card,
-    CardHeader,
     CardContent,
     CardDescription,
+    CardHeader,
     CardTitle,
 } from '@/components/ui/card'
 import SubmitProblemForm from '@/features/add-problem/components/form/submitProblemForm'
-import { PlusCircle, Link as LinkIcon, Heading } from 'lucide-react'
 
-export default function AddProblemPage() {
+export default async function AddProblemPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ captureId?: string }>
+}) {
+    const params = await searchParams
+    const captureId = params.captureId ? Number(params.captureId) : null
+
     return (
         <div className="min-h-screen">
             <div className="relative border-b">
@@ -41,7 +47,7 @@ export default function AddProblemPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <SubmitProblemForm />
+                        <SubmitProblemForm captureId={captureId} />
                     </CardContent>
                 </Card>
             </div>

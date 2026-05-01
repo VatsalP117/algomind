@@ -1,8 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api-client'
 import { toast } from 'react-hot-toast'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { api } from '@/lib/api-client'
 
 export type CreateProblemInput = {
+    captureId?: number | null
     title: string
     problemLink: string
     conceptId: number | null
@@ -31,6 +33,8 @@ type Payload = {
 type CreateProblemResponse = {
     id: number
     hint_generation_queued: boolean
+    capture_id?: number
+    already_imported?: boolean
 }
 
 const markdownSignals = [
@@ -86,7 +90,10 @@ export const useCreateProblem = () => {
                 generate_hints: data.generateHints,
             }
 
-            const res = await api.post('/problems', payload)
+            const endpoint = data.captureId
+                ? `/problem-captures/${data.captureId}/convert`
+                : '/problems'
+            const res = await api.post(endpoint, payload)
             return res.data as CreateProblemResponse
         },
 
@@ -94,26 +101,41 @@ export const useCreateProblem = () => {
             // A new problem immediately enters the review queue and changes dashboard totals
             queryClient.invalidateQueries({ queryKey: ['review-problems'] })
             queryClient.invalidateQueries({ queryKey: ['metrics'] })
+            queryClient.invalidateQueries({ queryKey: ['problems'] })
+            queryClient.invalidateQueries({ queryKey: ['problem-captures'] })
             if (data.hint_generation_queued) {
                 toast.success(
-                    'Problem added. Hints will be generated in the background.',
+                    variables.captureId
+                        ? 'Problem imported. Hints will be generated in the background.'
+                        : 'Problem added. Hints will be generated in the background.',
                 )
                 return
             }
 
             if (variables.generateHints) {
                 toast.success(
-                    'Problem added. Automatic hint generation is currently unavailable.',
+                    variables.captureId
+                        ? 'Problem imported. Automatic hint generation is currently unavailable.'
+                        : 'Problem added. Automatic hint generation is currently unavailable.',
                 )
                 return
             }
 
-            toast.success('Problem added successfully')
+            if (data.already_imported) {
+                toast.success('Problem already existed in your library')
+                return
+            }
+
+            toast.success(
+                variables.captureId
+                    ? 'Problem imported successfully'
+                    : 'Problem added successfully',
+            )
         },
 
-        onError: (error) => {
+        onError: (error: any) => {
             console.error('Failed to add problem:', error)
-            toast.error('Failed to add problem')
+            toast.error(error.response?.data?.message || 'Failed to add problem')
         },
     })
 }

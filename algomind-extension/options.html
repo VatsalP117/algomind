@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Algomind Extension Settings</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container options-container">
+      <section class="card">
+        <h1>Extension settings</h1>
+        <p class="muted">
+          Use the defaults for production. Override them only when pointing the
+          extension at a local development instance.
+        </p>
+
+        <label class="field">
+          <span>API base URL</span>
+          <input id="api-base-url" placeholder="https://algomind.pro/api/v1" />
+        </label>
+
+        <label class="field">
+          <span>App base URL</span>
+          <input id="app-base-url" placeholder="https://algomind.pro" />
+        </label>
+
+        <div class="actions">
+          <button id="save-settings" class="button" type="button">
+            Save settings
+          </button>
+          <button id="reset-settings" class="button button-ghost" type="button">
+            Reset defaults
+          </button>
+        </div>
+
+        <p id="settings-status" class="muted small"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

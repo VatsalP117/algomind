@@ -1,9 +1,11 @@
 import {
-    ChartBar,
     BookOpen,
+    BookOpenText,
+    ChartBar,
     ClipboardPenLine,
     GraduationCap,
-    BookOpenText,
+    Inbox,
+    Puzzle,
 } from 'lucide-react'
 
 const URL_PREFIX = '/dashboard'
@@ -24,6 +26,11 @@ export const sidebarItems = [
         icon: ClipboardPenLine,
     },
     {
+        title: 'Inbox',
+        url: `${URL_PREFIX}/inbox`,
+        icon: Inbox,
+    },
+    {
         title: 'Study Concepts',
         url: `${URL_PREFIX}/edit-concepts`,
         icon: GraduationCap,
@@ -32,6 +39,11 @@ export const sidebarItems = [
         title: 'Library',
         url: `${URL_PREFIX}/library`,
         icon: BookOpen,
+    },
+    {
+        title: 'Extension',
+        url: `${URL_PREFIX}/extension`,
+        icon: Puzzle,
     },
 ]
 
@@ -56,5 +68,15 @@ export const FeaturePagesHeaderInfo = {
     library: {
         title: 'Library',
         description: 'Browse and manage all your tracked problems.',
+    },
+    inbox: {
+        title: 'Inbox',
+        description:
+            'Finish importing quick-saved LeetCode problems from the Chrome extension.',
+    },
+    extension: {
+        title: 'Chrome Extension',
+        description:
+            'Pair your browser, manage connected installations, and quick-save solved LeetCode problems.',
     },
 } as const;

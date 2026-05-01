@@ -29,6 +29,13 @@ The landing page detects if you're already signed in and directs you to the dash
 
 The project is split into two separate services.
 
+### Chrome Extension — MV3
+
+- **Purpose**: quick-save solved LeetCode problems into an Algomind inbox with minimal friction, then finish the review-ready fields in the web app later.
+- **Runtime**: Chrome Manifest V3 with a popup UI, background service worker, and LeetCode content script.
+- **Auth**: one-time pairing from the Algomind dashboard. The extension exchanges the pairing code for scoped Algomind extension tokens and keeps itself signed in independently from the web app session.
+- **Flow**: the extension sends a canonical LeetCode URL to the backend, the backend fetches metadata server-side, deduplicates by LeetCode slug, and stores a `problem_captures` inbox item until the user converts it into a full reviewable problem.
+
 ### Frontend — Next.js
 
 - **Framework**: Next.js 15 (App Router) with `output: "standalone"` for Docker deployment
@@ -36,6 +43,7 @@ The project is split into two separate services.
 - **Data fetching**: TanStack Query (React Query) with a shared `useAuthQuery` hook that gates all queries behind Clerk's `isLoaded && isSignedIn` check. Intelligent cache configuration — concepts cached for 10 minutes, dashboard metrics for 2 minutes, with prefix-based invalidation after mutations.
 - **UI**: shadcn/ui components, Tailwind CSS, next-themes for dark mode.
 - **Routing**: Dashboard pages are under `/dashboard` with a shared sidebar layout. Auth pages are under `/(auth)` with a split-screen layout.
+- **New extension surfaces**: `/dashboard/inbox` for captured problems and `/dashboard/extension` for pairing and installation management.
 
 ### Backend — Go
 
@@ -51,6 +59,20 @@ The project is split into two separate services.
 GET  /health
 
 POST /api/v1/problems
+GET  /api/v1/problem-captures
+POST /api/v1/problem-captures/:capture_id/convert
+POST /api/v1/problem-captures/:capture_id/archive
+POST /api/v1/problem-captures/:capture_id/retry-enrichment
+
+POST /api/v1/extension/pairing-codes
+GET  /api/v1/extension/installations
+DELETE /api/v1/extension/installations/:installation_id
+
+POST /api/v1/extension/auth/pair
+POST /api/v1/extension/auth/refresh
+POST /api/v1/extension/auth/logout
+POST /api/v1/extension/captures
+
 GET  /api/v1/concepts
 GET  /api/v1/reviews/queue
 POST /api/v1/reviews/:entity_type/:entity_id/log
@@ -70,6 +92,8 @@ Five tables:
 - `users` — synced from Clerk on first login, stores streak data
 - `concepts` — global algorithm/DS concepts (admin-managed)
 - `problems` — user-added problems, linked to a concept
+- `problem_captures` — quick-saved LeetCode inbox items waiting to be converted into full problems
+- `extension_pairing_codes`, `extension_installations`, `extension_refresh_tokens` — extension auth and device management
 - `review_states` — per-user SRS state for each problem/concept (interval, ease factor, next review date)
 - `review_logs` — full history of every review session
 
@@ -92,6 +116,13 @@ cd algomind-frontend
 cp .env.example .env.local # fill in NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY etc.
 npm install
 npm run dev
+
+# Chrome extension
+cd ../algomind-extension
+npm install
+npm run build
+
+# Then load algomind-extension/dist as an unpacked extension in Chrome.
 ```
 
 Run migrations:
@@ -131,6 +162,7 @@ KIMI_BASE_URL
 KIMI_API_KEY
 KIMI_MODEL
 KIMI_TIMEOUT_SECS
+EXTENSION_TOKEN_SECRET
 ```
 
 Kimi hint generation is optional. Recommended values:
@@ -142,6 +174,8 @@ KIMI_MODEL=kimi-k2.5
 
 The backend also accepts the older `LLM_*` env names as a temporary fallback during the switch.
 
+`EXTENSION_TOKEN_SECRET` is optional. If omitted, the backend derives an extension signing secret from `CLERK_SECRET_KEY`.
+
 ---
 
 ## Tech Stack
@@ -149,6 +183,7 @@ The backend also accepts the older `LLM_*` env names as a temporary fallback dur
 | Layer         | Technology                                 |
 | ------------- | ------------------------------------------ |
 | Frontend      | Next.js 15, React, Tailwind CSS, shadcn/ui |
+| Extension     | Chrome MV3, TypeScript                     |
 | Auth          | Clerk                                      |
 | Data fetching | TanStack Query                             |
 | Backend       | Go, Echo v4                                |

@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -90,11 +91,17 @@ func NewServer(cfg *config.Config) *Server {
 		},
 	}))
 
+	allowedOrigins := map[string]struct{}{
+		"http://localhost:3000": {},
+		"https://algomind.pro":  {},
+	}
 	e.Use(middleware.CORSWithConfig(
 		middleware.CORSConfig{
-			AllowOrigins: []string{
-				"http://localhost:3000",
-				"https://algomind.pro",
+			AllowOriginFunc: func(origin string) (bool, error) {
+				if _, ok := allowedOrigins[origin]; ok {
+					return true, nil
+				}
+				return strings.HasPrefix(origin, "chrome-extension://"), nil
 			},
 			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		}))
