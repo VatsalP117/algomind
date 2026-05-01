@@ -7,6 +7,7 @@ import (
 	"github.com/VatsalP117/algomind/algomind-backend/internal/middleware"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/problems"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/repositories"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/reviews"
 	"github.com/labstack/echo/v4"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/config"
@@ -27,9 +28,14 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	extensionService := extensions.NewService(db, cfg)
 	extensionAuthMiddleware := middleware.NewExtensionAuth(extensionService)
 
+	reviewRepo := repositories.NewPostgresReviewRepository(db.Db)
+	reviewLogRepo := repositories.NewPostgresReviewLogRepository(db.Db)
+	userRepo := repositories.NewPostgresUserRepository(db.Db)
+	reviewService := reviews.NewService(db, reviewRepo, reviewLogRepo, userRepo)
+
 	userHandler := handlers.NewUserHandler(db)
 	problemHandler := handlers.NewProblemHandler(problemRepo, reviewStateRepo, problemService)
-	reviewHandler := handlers.NewReviewHandler(db)
+	reviewHandler := handlers.NewReviewHandler(reviewService)
 	conceptHandler := handlers.NewConceptHandler(db)
 	metricsHandler := handlers.NewMetricsHandler(db)
 	leetcodeHandler := handlers.NewLeetCodeHandler()
