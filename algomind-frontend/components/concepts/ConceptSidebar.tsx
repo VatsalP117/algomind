@@ -1,23 +1,23 @@
 import { useState } from 'react'
 import {
+    BookOpen,
+    Edit2,
+    FileText,
     Folder,
     FolderOpen,
-    FileText,
+    FolderPlus,
     MoreVertical,
     Plus,
-    Edit2,
-    Trash2,
-    FolderPlus,
-    BookOpen
-} from 'lucide-react'
+    Trash2} from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { ConceptFolder, ConceptFolderItem } from '@/features/edit-concepts/api/useConceptFolders'
 import { Concept } from '@/features/edit-concepts/api/useConcepts'
 import { cn } from '@/lib/utils'

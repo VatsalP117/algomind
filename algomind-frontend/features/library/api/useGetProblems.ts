@@ -1,5 +1,5 @@
-import { api } from '@/lib/api-client';
 import { useAuthQuery } from '@/features/useAuthQuery';
+import { api } from '@/lib/api-client';
 
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 

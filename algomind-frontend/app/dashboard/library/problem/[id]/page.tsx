@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+
 import { ProblemDetailView } from '@/features/library/components/ProblemDetailView';
 
 export default function ProblemPage() {

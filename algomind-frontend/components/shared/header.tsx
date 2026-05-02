@@ -1,10 +1,11 @@
 "use client";
 
+import { Github,Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Github } from "lucide-react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme();

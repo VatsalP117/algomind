@@ -1,11 +1,12 @@
 'use client'
 
+import { useAuth } from '@clerk/nextjs'
+import { Brain, Moon, Sun } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@clerk/nextjs'
 import { useTheme } from 'next-themes'
+
 import { Button } from '@/components/ui/button'
-import { Brain, Moon, Sun } from 'lucide-react'
 
 export function LandingNav() {
     const { theme, setTheme } = useTheme()

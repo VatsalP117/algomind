@@ -1,7 +1,7 @@
 'use client'; // <--- Critical: This allows Context to work
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
     // We use useState so the Client is created once per session,

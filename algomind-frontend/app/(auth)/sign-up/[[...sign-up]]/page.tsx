@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { useSignUp } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { Brain, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Brain, Loader2 } from 'lucide-react'
 
 type Step = 'register' | 'verify'
 
@@ -79,7 +80,7 @@ export default function SignUpPage() {
                 </div>
                 <div>
                     <blockquote className="text-2xl font-medium leading-relaxed">
-                        "Without review, 70% of new information is forgotten within 24 hours."
+                        &ldquo;Without review, 70% of new information is forgotten within 24 hours.&rdquo;
                     </blockquote>
                     <p className="mt-4 text-primary-foreground/70">— Ebbinghaus Forgetting Curve</p>
                 </div>

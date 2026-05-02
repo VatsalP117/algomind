@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import { SiteHeader } from '@/components/shared/header'
+
 import { AppSidebar } from '@/components/shared/app-sidebar'
+import { SiteHeader } from '@/components/shared/header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 export const metadata: Metadata = {

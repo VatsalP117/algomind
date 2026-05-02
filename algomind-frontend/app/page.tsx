@@ -1,10 +1,11 @@
+import { BarChart3, BookOpen, Brain, CheckCircle, Clock, TrendingUp,Zap } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { Brain, BookOpen, Zap, BarChart3, CheckCircle, Clock, TrendingUp } from 'lucide-react'
-import { LandingNav } from '@/components/shared/landing-nav'
+
 import { ForgettingCurveChart } from '@/components/shared/forgetting-curve-chart'
 import { HeroCTA } from '@/components/shared/hero-cta'
+import { LandingNav } from '@/components/shared/landing-nav'
+import { Badge } from '@/components/ui/badge'
 import { siteConfig } from '@/lib/seo'
 
 export const metadata: Metadata = {
@@ -196,7 +197,7 @@ export default function LandingPage() {
                 In 1885, Hermann Ebbinghaus discovered the <strong className="text-foreground">Forgetting Curve</strong>: without reinforcement, we forget ~50% of new information within an hour, and ~70% within 24 hours.
               </p>
               <p className="mt-4 text-muted-foreground">
-                You can grind 200 LeetCode problems and still blank on a binary search during an interview — not because you're bad at algorithms, but because your brain naturally discards information it doesn't see repeatedly.
+                You can grind 200 LeetCode problems and still blank on a binary search during an interview — not because you&rsquo;re bad at algorithms, but because your brain naturally discards information it doesn&rsquo;t see repeatedly.
               </p>
               <div className="mt-8 space-y-3">
                 {[
@@ -265,7 +266,7 @@ export default function LandingPage() {
             <div className="order-1 lg:order-2">
               <Badge variant="outline" className="mb-4">The Solution</Badge>
               <h2 className="text-4xl font-bold tracking-tight">
-                Review at the exact moment you're about to forget
+                Review at the exact moment you&rsquo;re about to forget
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
                 <strong className="text-foreground">Spaced repetition</strong> schedules reviews at increasing intervals — right before your memory fades. Each review resets the forgetting curve at a higher baseline.

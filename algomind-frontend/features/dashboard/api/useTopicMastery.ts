@@ -1,5 +1,6 @@
-import { api } from '@/lib/api-client'
 import { useAuthQuery } from '@/features/useAuthQuery'
+import { api } from '@/lib/api-client'
+
 import type { TopicMastery } from '../types/metrics'
 
 const getTopicMastery = async (): Promise<TopicMastery[]> => {

@@ -1,11 +1,12 @@
 'use client'
 
-import { QueueCard } from '@/components/dashboard/QueueCard'
-import StreakCard from '@/components/dashboard/StreakCard'
+import { BookOpen,Sparkles, Target, TrendingUp } from 'lucide-react'
+
 import { ChartLineLinear } from '@/components/dashboard/LineChart'
+import { QueueCard } from '@/components/dashboard/QueueCard'
 import { ChartRadarDefault } from '@/components/dashboard/RadarChart'
+import StreakCard from '@/components/dashboard/StreakCard'
 import { useDashboardMetrics } from '@/features/dashboard'
-import { Sparkles, Target, TrendingUp, BookOpen } from 'lucide-react'
 
 export default function DashboardPage() {
     const { data } = useDashboardMetrics()

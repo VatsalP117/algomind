@@ -1,5 +1,8 @@
 'use client'
 
+import { ArrowRight, CheckCircle2, Clock, Zap } from 'lucide-react'
+import Link from 'next/link'
+
 import { Button } from '@/components/ui/button'
 import {
     Card,
@@ -10,10 +13,8 @@ import {
     CardTitle,
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import Link from 'next/link'
-import { useDashboardMetrics } from '@/features/dashboard'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CheckCircle2, Clock, ArrowRight, Zap } from 'lucide-react'
+import { useDashboardMetrics } from '@/features/dashboard'
 
 export function QueueCard() {
     const { data, isLoading, isError } = useDashboardMetrics()
@@ -43,7 +44,7 @@ export function QueueCard() {
                             )}
                         </div>
                         <div>
-                            <CardTitle className="font-display text-xl font-bold">Today's Queue</CardTitle>
+                            <CardTitle className="font-display text-xl font-bold">Today&rsquo;s Queue</CardTitle>
                             <CardDescription className="text-sm text-muted-foreground">
                                 Problems scheduled for review
                             </CardDescription>

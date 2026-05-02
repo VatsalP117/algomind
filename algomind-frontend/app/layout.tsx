@@ -1,12 +1,14 @@
+import { Toaster } from 'react-hot-toast'
+import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { ThemeProvider } from '@/components/shared/theme-provider'
-import { ClerkProvider } from '@clerk/nextjs'
-import './globals.css'
-import { Toaster } from 'react-hot-toast'
-import Providers from "@/components/providers";
+
 import { AnalyticsComponent } from '@/components/AnalyticsComponent'
+import Providers from "@/components/providers";
+import { ThemeProvider } from '@/components/shared/theme-provider'
 import { siteConfig } from '@/lib/seo'
+
+import './globals.css'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',

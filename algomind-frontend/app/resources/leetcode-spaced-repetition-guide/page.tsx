@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
+
 import { LandingNav } from '@/components/shared/landing-nav'
+import { Badge } from '@/components/ui/badge'
 import { siteConfig } from '@/lib/seo'
 
 export const metadata: Metadata = {

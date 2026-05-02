@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useGetProblems, Difficulty } from '../api/useGetProblems';
+import { useMemo,useState } from 'react';
+
+import { Difficulty,useGetProblems } from '../api/useGetProblems';
+
 import { Filters } from './Filters';
 import { ProblemList } from './ProblemList';
 

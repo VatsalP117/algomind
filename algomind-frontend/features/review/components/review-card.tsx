@@ -1,8 +1,11 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useReviewStore, ReviewProblem } from '../store/useReviewStore'
-import { useLogReview } from '../api/useReviewLog' // <--- Import the hook
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import ReactMarkdown from 'react-markdown'
+import { Eye, Lightbulb, Loader2 } from 'lucide-react'
+import remarkGfm from 'remark-gfm'
+
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
     Card,
@@ -11,11 +14,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { Eye, Lightbulb, Loader2 } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+
+import { useLogReview } from '../api/useReviewLog' // <--- Import the hook
+import { ReviewProblem,useReviewStore } from '../store/useReviewStore'
 
 // Helper for color coding difficulty
 const difficultyColor = (diff: string) => {
@@ -40,12 +42,11 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
     const { mutate: logReview, isPending } = useLogReview()
 
     // 2. Handle Rating Submission
-    const handleRate = (rating: 1 | 2 | 3 | 4) => {
+    const handleRate = useCallback((rating: 1 | 2 | 3 | 4) => {
         logReview(
             { entityId: problem.entity_id, rating },
             {
                 onSuccess: () => {
-                    // Only move to next card if server accepted the log
                     nextCard()
                 },
                 onError: () => {
@@ -53,7 +54,7 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                 },
             },
         )
-    }
+    }, [logReview, nextCard, problem.entity_id])
 
     // Reset local state when problem changes
     useEffect(() => {

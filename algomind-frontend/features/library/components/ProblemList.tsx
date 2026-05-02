@@ -1,9 +1,12 @@
-import { Problem } from '../api/useGetProblems';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Calendar } from 'lucide-react';
-import DifficultyBadge from './DifficultyBadge';
 import Link from 'next/link';
+
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+
+import { Problem } from '../api/useGetProblems';
+
+import DifficultyBadge from './DifficultyBadge';
 
 interface ProblemListProps {
     problems: Problem[];

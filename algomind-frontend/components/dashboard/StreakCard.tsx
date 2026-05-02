@@ -1,5 +1,7 @@
 'use client'
 
+import { Flame, TrendingUp,Trophy } from 'lucide-react'
+
 import {
     Card,
     CardContent,
@@ -7,9 +9,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
-import { useDashboardMetrics } from '@/features/dashboard'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Flame, Trophy, TrendingUp } from 'lucide-react'
+import { useDashboardMetrics } from '@/features/dashboard'
 
 export default function StreakCard() {
     const { data, isLoading, isError } = useDashboardMetrics()

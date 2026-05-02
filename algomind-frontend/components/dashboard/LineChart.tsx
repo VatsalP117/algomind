@@ -1,7 +1,7 @@
 'use client'
 
-import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react'
-import { CartesianGrid, Line, LineChart, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { Activity,Minus, TrendingDown, TrendingUp } from 'lucide-react'
+import { CartesianGrid, Line, LineChart, ResponsiveContainer,XAxis, YAxis } from 'recharts'
 
 import {
     Card,
@@ -17,8 +17,8 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from '@/components/ui/chart'
-import { useRecallQuality } from '@/features/dashboard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useRecallQuality } from '@/features/dashboard'
 
 const chartConfig = {
     recall_rate: {

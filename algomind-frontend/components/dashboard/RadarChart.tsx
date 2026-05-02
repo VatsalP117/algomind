@@ -9,8 +9,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
-import { useTopicMastery } from '@/features/dashboard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTopicMastery } from '@/features/dashboard'
 
 function getMasteryColor(score: number) {
     if (score >= 70) return { bar: 'bg-green-500', text: 'text-green-500', bg: 'bg-green-500/10' }

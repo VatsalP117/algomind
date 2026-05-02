@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { useSignIn } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { Brain, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Brain, Loader2 } from 'lucide-react'
 
 export default function SignInPage() {
     const { isLoaded, signIn, setActive } = useSignIn()
@@ -62,7 +63,7 @@ export default function SignInPage() {
                 </div>
                 <div>
                     <blockquote className="text-2xl font-medium leading-relaxed">
-                        "The spacing effect is one of the most robust findings in cognitive psychology."
+                        &ldquo;The spacing effect is one of the most robust findings in cognitive psychology.&rdquo;
                     </blockquote>
                     <p className="mt-4 text-primary-foreground/70">— Hermann Ebbinghaus, 1885</p>
                 </div>

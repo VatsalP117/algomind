@@ -1,5 +1,6 @@
-import { api } from '@/lib/api-client'
 import { useAuthQuery } from '@/features/useAuthQuery'
+import { api } from '@/lib/api-client'
+
 import type { RecallDataPoint } from '../types/metrics'
 
 const getRecallQuality = async (days: number = 7): Promise<RecallDataPoint[]> => {

@@ -2,7 +2,7 @@ import next from 'eslint-config-next'
 import prettier from 'eslint-config-prettier'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
-export default [
+const config = [
     ...next,
     prettier,
     {
@@ -27,3 +27,5 @@ export default [
         },
     },
 ]
+
+export default config
