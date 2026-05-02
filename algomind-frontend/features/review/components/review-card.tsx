@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useReviewStore, ReviewProblem } from '../store/useReviewStore'
 import { useLogReview } from '../api/useReviewLog' // <--- Import the hook
+import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import {
     Card,
@@ -48,7 +49,7 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                     nextCard()
                 },
                 onError: () => {
-                    alert('Failed to save review. Please try again.')
+                    toast.error('Failed to save review. Please try again.')
                 },
             },
         )

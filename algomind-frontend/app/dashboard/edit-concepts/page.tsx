@@ -55,7 +55,7 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
-import { toast } from 'sonner'
+import { toast } from 'react-hot-toast'
 
 type ViewMode = 'grid' | 'study' | 'edit' | 'create'
 type FolderFilter = 'all' | 'unfiled' | number

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 
 export const useDeleteProblem = () => {
     const queryClient = useQueryClient();
