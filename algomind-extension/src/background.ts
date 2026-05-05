@@ -117,6 +117,8 @@ async function disconnectExtension() {
                 Authorization: `Bearer ${accessToken}`,
             },
         })
+    } catch {
+        // best-effort server logout
     } finally {
         await clearSession()
     }
