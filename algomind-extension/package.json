@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "rimraf dist",
-    "build": "npm run clean && tsc && mkdir -p dist && cp manifest.json popup.html options.html styles.css dist/",
+    "clean": "rimraf dist releases",
+    "build": "npm run clean && tsc && mkdir -p dist && cp manifest.json popup.html options.html styles.css dist/ && cp -r public/* dist/ 2>/dev/null || true",
+    "build:release": "node scripts/build-release.js",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
