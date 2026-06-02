@@ -18,10 +18,10 @@ type LogResult struct {
 
 // Service orchestrates review operations.
 type Service struct {
-	db              *database.Service
-	reviewRepo      repositories.ReviewRepository
-	reviewLogRepo   repositories.ReviewLogRepository
-	userRepo        repositories.UserRepository
+	db            *database.Service
+	reviewRepo    repositories.ReviewRepository
+	reviewLogRepo repositories.ReviewLogRepository
+	userRepo      repositories.UserRepository
 }
 
 // NewService creates a new review Service.

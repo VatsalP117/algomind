@@ -14,9 +14,9 @@ import (
 )
 
 type ProblemHandler struct {
-	ProblemRepo      repositories.ProblemRepository
-	ReviewStateRepo  repositories.ReviewStateRepository
-	ProblemService   *problems.Service
+	ProblemRepo     repositories.ProblemRepository
+	ReviewStateRepo repositories.ReviewStateRepository
+	ProblemService  *problems.Service
 }
 
 func NewProblemHandler(
