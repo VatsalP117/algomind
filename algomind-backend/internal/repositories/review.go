@@ -12,10 +12,10 @@ import (
 
 // ReviewStateWithDifficulty holds the current SRS state plus the entity difficulty.
 type ReviewStateWithDifficulty struct {
-	IntervalDays int
-	EaseFactor   float64
-	Streak       int
-	Difficulty   string
+	IntervalDays int     `db:"interval_days"`
+	EaseFactor   float64 `db:"ease_factor"`
+	Streak       int     `db:"streak"`
+	Difficulty   string  `db:"difficulty"`
 }
 
 // ReviewRepository defines the seam for review state persistence.
