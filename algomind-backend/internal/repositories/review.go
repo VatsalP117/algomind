@@ -28,7 +28,7 @@ type ReviewRepository interface {
 
 // ReviewLogRepository defines the seam for review log persistence.
 type ReviewLogRepository interface {
-	Create(ctx context.Context, tx *sqlx.Tx, userID, entityType, entityID, rating string) error
+	Create(ctx context.Context, tx *sqlx.Tx, userID, entityType, entityID, rating string, patternGuess, patternRecognition *string) error
 }
 
 // UserRepository defines the seam for user streak persistence.
@@ -60,7 +60,14 @@ func (r *PostgresReviewRepository) GetQueue(ctx context.Context, userID string) 
 			p.answer_language AS answer_language,
 			p.hints       AS hints,
 			con.title    AS concept_title,
-			con.content  AS content
+			con.content  AS content,
+			COALESCE((
+				SELECT json_agg(pat.name ORDER BY pp.position)
+				FROM problem_pattern_cards pc
+				JOIN problem_patterns pp ON pp.card_id = pc.id
+				JOIN patterns pat ON pat.id = pp.pattern_id
+				WHERE pc.problem_id = p.id
+			), '[]'::json) AS pattern_names
 		FROM review_states rs
 		LEFT JOIN problems p
 			ON rs.entity_type = 'problem'
@@ -149,17 +156,19 @@ func NewPostgresReviewLogRepository(db *sqlx.DB) *PostgresReviewLogRepository {
 	return &PostgresReviewLogRepository{db: db}
 }
 
-func (r *PostgresReviewLogRepository) Create(ctx context.Context, tx *sqlx.Tx, userID, entityType, entityID, rating string) error {
+func (r *PostgresReviewLogRepository) Create(ctx context.Context, tx *sqlx.Tx, userID, entityType, entityID, rating string, patternGuess, patternRecognition *string) error {
 	query := `
 		INSERT INTO review_logs (
 			user_id,
 			entity_type,
 			entity_id,
 			rating,
+			pattern_guess,
+			pattern_recognition,
 			reviewed_at
-		) VALUES ($1, $2, $3, $4, NOW())
+		) VALUES ($1, $2, $3, $4, $5, $6, NOW())
 	`
-	_, err := tx.ExecContext(ctx, query, userID, entityType, entityID, rating)
+	_, err := tx.ExecContext(ctx, query, userID, entityType, entityID, rating, patternGuess, patternRecognition)
 	return err
 }
 

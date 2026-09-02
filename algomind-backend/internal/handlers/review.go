@@ -12,7 +12,9 @@ import (
 )
 
 type LogReviewRequest struct {
-	Rating string `json:"rating" validate:"required,oneof=AGAIN GOOD EASY HARD"`
+	Rating             string  `json:"rating" validate:"required,oneof=AGAIN GOOD EASY HARD"`
+	PatternGuess       *string `json:"pattern_guess" validate:"omitempty,max=200"`
+	PatternRecognition *string `json:"pattern_recognition" validate:"omitempty,oneof=recognized partial missed"`
 }
 
 type ReviewHandler struct {
@@ -56,7 +58,10 @@ func (h *ReviewHandler) LogReview(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	result, err := h.reviewService.LogReview(c.Request().Context(), userID, entityType, entityID, req.Rating)
+	result, err := h.reviewService.LogReview(c.Request().Context(), userID, entityType, entityID, req.Rating, &reviews.ReviewEvidence{
+		PatternGuess:       req.PatternGuess,
+		PatternRecognition: req.PatternRecognition,
+	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "review state not found")

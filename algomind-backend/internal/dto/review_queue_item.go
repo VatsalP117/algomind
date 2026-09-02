@@ -1,6 +1,10 @@
 package dto
 
-import "time"
+import (
+	"time"
+
+	"github.com/VatsalP117/algomind/algomind-backend/internal/models"
+)
 
 type ReviewQueueItem struct {
 	EntityType   string    `db:"entity_type" json:"entity_type"`
@@ -19,4 +23,8 @@ type ReviewQueueItem struct {
 	// Concept fields (nullable)
 	ConceptTitle *string `db:"concept_title" json:"concept_title,omitempty"`
 	Content      *string `db:"content" json:"content,omitempty"`
+
+	// Pattern-card patterns for problem reviews (empty for concepts and
+	// problems without a card).
+	PatternNames models.JSONStringArray `db:"pattern_names" json:"patterns,omitempty"`
 }

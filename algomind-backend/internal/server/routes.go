@@ -5,6 +5,7 @@ import (
 	"github.com/VatsalP117/algomind/algomind-backend/internal/handlers"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/leetcode"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/middleware"
+	"github.com/VatsalP117/algomind/algomind-backend/internal/patterns"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/problems"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/repositories"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/reviews"
@@ -33,6 +34,9 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	userRepo := repositories.NewPostgresUserRepository(db.Db)
 	reviewService := reviews.NewService(db, reviewRepo, reviewLogRepo, userRepo)
 	captureRepo := repositories.NewPostgresCaptureRepository(db.Db)
+	patternRepo := repositories.NewPostgresPatternRepository(db.Db)
+
+	patternService := patterns.NewService(db, patternRepo, llmClient)
 
 	userHandler := handlers.NewUserHandler(db)
 	problemHandler := handlers.NewProblemHandler(problemRepo, reviewStateRepo, problemService)
@@ -43,6 +47,7 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	folderHandler := handlers.NewConceptFolderHandler(db)
 	extensionHandler := handlers.NewExtensionHandler(extensionService)
 	problemCaptureHandler := handlers.NewProblemCaptureHandler(captureRepo, leetcodeClient, problemService)
+	patternCardHandler := handlers.NewPatternCardHandler(patternService)
 
 	api := e.Group("/api/v1")
 
@@ -80,6 +85,9 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	appAPI.GET("/problems/:problem_id", problemHandler.GetIndividualUserProblem)
 	appAPI.DELETE("/problems/:problem_id", problemHandler.DeleteProblem)
 	appAPI.POST("/problems/add-to-review-queue/:problem_id", problemHandler.AddProblemToReviewQueue)
+	appAPI.GET("/problems/:problem_id/pattern-card", patternCardHandler.GetPatternCard)
+	appAPI.POST("/problems/:problem_id/pattern-card/generate", patternCardHandler.GeneratePatternCard)
+	appAPI.PUT("/problems/:problem_id/pattern-card", patternCardHandler.UpdatePatternCard)
 
 	appAPI.GET("/problem-captures", problemCaptureHandler.ListCaptures)
 	appAPI.GET("/problem-captures/:capture_id", problemCaptureHandler.GetCapture)

@@ -59,6 +59,14 @@ The project is split into two separate services.
 GET  /health
 
 POST /api/v1/problems
+GET  /api/v1/problems
+GET  /api/v1/problems/:problem_id
+DELETE /api/v1/problems/:problem_id
+POST /api/v1/problems/add-to-review-queue/:problem_id
+GET  /api/v1/problems/:problem_id/pattern-card
+POST /api/v1/problems/:problem_id/pattern-card/generate
+PUT  /api/v1/problems/:problem_id/pattern-card
+
 GET  /api/v1/problem-captures
 POST /api/v1/problem-captures/:capture_id/convert
 POST /api/v1/problem-captures/:capture_id/archive
@@ -165,11 +173,12 @@ KIMI_TIMEOUT_SECS
 EXTENSION_TOKEN_SECRET
 ```
 
-Kimi hint generation is optional. Recommended values:
+LLM-backed features (hint generation and pattern cards) are optional. For local development with OpenCode Go (an OpenAI-compatible endpoint):
 
 ```
-KIMI_BASE_URL=https://api.moonshot.ai
-KIMI_MODEL=kimi-k2.5
+KIMI_BASE_URL=https://opencode.ai/zen/go
+KIMI_MODEL=deepseek-v4-flash
+KIMI_API_KEY=opencode-go-xxxxxxxxxxxxxxxx    # replace with your own key; never commit a real key
 ```
 
 The backend also accepts the older `LLM_*` env names as a temporary fallback during the switch.

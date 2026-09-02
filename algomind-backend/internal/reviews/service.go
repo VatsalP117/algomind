@@ -3,6 +3,7 @@ package reviews
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/database"
@@ -14,6 +15,13 @@ import (
 // LogResult holds the outcome of a logged review.
 type LogResult struct {
 	NextReviewAt time.Time `json:"next_review_at"`
+}
+
+// ReviewEvidence carries optional pattern-recognition data recorded with
+// a review. Only accepted for problem reviews.
+type ReviewEvidence struct {
+	PatternGuess       *string
+	PatternRecognition *string
 }
 
 // Service orchestrates review operations.
@@ -45,7 +53,12 @@ func (s *Service) GetQueue(ctx context.Context, userID string) ([]dto.ReviewQueu
 }
 
 // LogReview logs a review, updates SRS state, and handles cascading resets.
-func (s *Service) LogReview(ctx context.Context, userID, entityType, entityID, rating string) (*LogResult, error) {
+// Optional pattern-recognition evidence is only persisted for problem
+// reviews; it is ignored for concept reviews.
+func (s *Service) LogReview(ctx context.Context, userID, entityType, entityID, rating string, evidence *ReviewEvidence) (*LogResult, error) {
+	// 0. Normalize optional pattern-recognition evidence.
+	patternGuess, patternRecognition := normalizeEvidence(entityType, evidence)
+
 	// 1. Fetch current SRS state
 	state, err := s.reviewRepo.GetState(ctx, userID, entityType, entityID)
 	if err != nil {
@@ -82,7 +95,7 @@ func (s *Service) LogReview(ctx context.Context, userID, entityType, entityID, r
 	}
 
 	// 5. Insert review log
-	if err := s.reviewLogRepo.Create(ctx, tx, userID, entityType, entityID, rating); err != nil {
+	if err := s.reviewLogRepo.Create(ctx, tx, userID, entityType, entityID, rating, patternGuess, patternRecognition); err != nil {
 		return nil, err
 	}
 
@@ -106,4 +119,35 @@ func (s *Service) LogReview(ctx context.Context, userID, entityType, entityID, r
 	committed = true
 
 	return &LogResult{NextReviewAt: result.NextReviewAt}, nil
+}
+
+// normalizeEvidence trims and validates optional pattern-recognition
+// evidence. Evidence is only accepted for problem reviews; empty
+// evidence is dropped entirely.
+func normalizeEvidence(entityType string, evidence *ReviewEvidence) (*string, *string) {
+	if evidence == nil || entityType != "problem" {
+		return nil, nil
+	}
+
+	guess := strings.TrimSpace(derefString(evidence.PatternGuess))
+	recognition := strings.TrimSpace(derefString(evidence.PatternRecognition))
+	if guess == "" && recognition == "" {
+		return nil, nil
+	}
+
+	var patternGuess, patternRecognition *string
+	if guess != "" {
+		patternGuess = &guess
+	}
+	if recognition != "" {
+		patternRecognition = &recognition
+	}
+	return patternGuess, patternRecognition
+}
+
+func derefString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
