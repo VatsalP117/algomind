@@ -166,22 +166,22 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
 DATABASE_URL
 CLERK_SECRET_KEY
 PORT
-KIMI_BASE_URL
-KIMI_API_KEY
-KIMI_MODEL
-KIMI_TIMEOUT_SECS
+LLM_BASE_URL
+LLM_API_KEY
+LLM_MODEL
+LLM_TIMEOUT_SECS
 EXTENSION_TOKEN_SECRET
 ```
 
-LLM-backed features (hint generation and pattern cards) are optional. For local development with OpenCode Go (an OpenAI-compatible endpoint):
+LLM-backed features (hint generation and pattern cards) are optional. To use OpenCode Go (an OpenAI-compatible endpoint):
 
 ```
-KIMI_BASE_URL=https://opencode.ai/zen/go
-KIMI_MODEL=deepseek-v4-flash
-KIMI_API_KEY=opencode-go-xxxxxxxxxxxxxxxx    # replace with your own key; never commit a real key
+LLM_BASE_URL=https://opencode.ai/zen/go
+LLM_MODEL=deepseek-v4-flash
+LLM_API_KEY=opencode-go-xxxxxxxxxxxxxxxx    # replace with your own key; never commit a real key
 ```
 
-The backend also accepts the older `LLM_*` env names as a temporary fallback during the switch.
+`LLM_*` is the canonical naming. The backend also accepts the legacy `KIMI_BASE_URL`, `KIMI_API_KEY`, `KIMI_MODEL`, and `KIMI_TIMEOUT_SECS` names as a backward-compatible fallback — a legacy value is used only when the matching `LLM_*` variable is unset, and canonical `LLM_*` values always win when both are set (including an intentionally empty `LLM_*` value). When neither canonical nor legacy is set, the backend defaults to Moonshot/Kimi (`https://api.moonshot.ai`, model `kimi-k2.5`, 120s timeout).
 
 `EXTENSION_TOKEN_SECRET` is optional. If omitted, the backend derives an extension signing secret from `CLERK_SECRET_KEY`.
 
