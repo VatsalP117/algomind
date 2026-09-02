@@ -124,9 +124,14 @@ export default function ReviewPage() {
                 </div>
             </div>
 
-            {/* Review Card */}
+            {/* Review Card — remount per problem so local state resets */}
             <div className="mx-auto max-w-3xl px-6 py-8">
-                {currentProblem && <ReviewCard problem={currentProblem} />}
+                {currentProblem && (
+                    <ReviewCard
+                        key={currentProblem.entity_id}
+                        problem={currentProblem}
+                    />
+                )}
             </div>
         </div>
     )

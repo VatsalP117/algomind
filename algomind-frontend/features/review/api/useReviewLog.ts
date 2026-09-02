@@ -10,20 +10,39 @@ const RATING_MAP = {
     4: "EASY",
 } as const;
 
+export type PatternRecognition = 'recognized' | 'partial' | 'missed';
+
 type LogReviewInput = {
     entityId: number;
     rating: 1 | 2 | 3 | 4;
+    patternGuess?: string;
+    patternRecognition?: PatternRecognition;
 };
 
 export const useLogReview = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ entityId, rating }: LogReviewInput) => {
-            // Matches your curl: POST /api/v1/reviews/problem/:id/log
-            const payload = { rating: RATING_MAP[rating] };
+        mutationFn: async ({
+            entityId,
+            rating,
+            patternGuess,
+            patternRecognition,
+        }: LogReviewInput) => {
+            const payload: Record<string, unknown> = {
+                rating: RATING_MAP[rating],
+            };
+            if (patternGuess !== undefined) {
+                payload.pattern_guess = patternGuess;
+            }
+            if (patternRecognition !== undefined) {
+                payload.pattern_recognition = patternRecognition;
+            }
 
-            const res = await api.post(`/reviews/problem/${entityId}/log`, payload);
+            const res = await api.post(
+                `/reviews/problem/${entityId}/log`,
+                payload
+            );
             return res.data;
         },
         onSuccess: () => {

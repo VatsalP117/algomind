@@ -10,6 +10,7 @@ export type ReviewProblem = {
     answer: string;
     answer_language?: string;
     hints: string;
+    patterns?: string[];
 };
 
 type ReviewState = {

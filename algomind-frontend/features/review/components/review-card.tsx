@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
-import { Eye, Lightbulb, Loader2 } from 'lucide-react'
+import { Eye, Lightbulb, Loader2, Search } from 'lucide-react'
 import remarkGfm from 'remark-gfm'
 
 import { Badge } from '@/components/ui/badge'
@@ -14,10 +14,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
-import { useLogReview } from '../api/useReviewLog' // <--- Import the hook
-import { ReviewProblem,useReviewStore } from '../store/useReviewStore'
+import {
+    type PatternRecognition,
+    useLogReview,
+} from '../api/useReviewLog'
+import { ReviewProblem, useReviewStore } from '../store/useReviewStore'
 
 // Helper for color coding difficulty
 const difficultyColor = (diff: string) => {
@@ -36,40 +40,75 @@ const difficultyColor = (diff: string) => {
 export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
     const [revealed, setRevealed] = useState(false)
     const [showHint, setShowHint] = useState(false)
+    // Recognition checkpoint state (only used for problems with patterns).
+    const [patternGuess, setPatternGuess] = useState('')
+    const [patternChecked, setPatternChecked] = useState(false)
+    const [patternRecognition, setPatternRecognition] =
+        useState<PatternRecognition | null>(null)
 
     // 1. Get Actions
     const nextCard = useReviewStore((state) => state.nextCard)
     const { mutate: logReview, isPending } = useLogReview()
 
-    // 2. Handle Rating Submission
-    const handleRate = useCallback((rating: 1 | 2 | 3 | 4) => {
-        logReview(
-            { entityId: problem.entity_id, rating },
-            {
-                onSuccess: () => {
-                    nextCard()
-                },
-                onError: () => {
-                    toast.error('Failed to save review. Please try again.')
-                },
-            },
-        )
-    }, [logReview, nextCard, problem.entity_id])
+    const hasPatterns = (problem.patterns?.length ?? 0) > 0
+    const checkpointComplete = patternChecked && patternRecognition !== null
+    const canReveal = !hasPatterns || checkpointComplete
 
-    // Reset local state when problem changes
-    useEffect(() => {
-        setRevealed(false)
-        setShowHint(false)
-    }, [problem.entity_id])
+    // 2. Handle Rating Submission
+    const handleRate = useCallback(
+        (rating: 1 | 2 | 3 | 4) => {
+            logReview(
+                hasPatterns
+                    ? {
+                          entityId: problem.entity_id,
+                          rating,
+                          patternGuess: patternGuess.trim(),
+                          patternRecognition: patternRecognition ?? 'missed',
+                      }
+                    : { entityId: problem.entity_id, rating },
+                {
+                    onSuccess: () => {
+                        nextCard()
+                    },
+                    onError: () => {
+                        toast.error('Failed to save review. Please try again.')
+                    },
+                },
+            )
+        },
+        [
+            logReview,
+            nextCard,
+            problem.entity_id,
+            hasPatterns,
+            patternGuess,
+            patternRecognition,
+        ],
+    )
 
     // Keyboard Shortcuts
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (isPending) return // Disable keys while saving
+            // Never fire shortcuts while the user is typing in an input.
+            const target = e.target as HTMLElement | null
+            if (
+                target &&
+                (target.tagName === 'INPUT' ||
+                    target.tagName === 'TEXTAREA' ||
+                    target.isContentEditable)
+            ) {
+                return
+            }
 
             if (e.code === 'Space') {
-                e.preventDefault()
-                if (!revealed) setRevealed(true)
+                // Space reveals the answer, but must never bypass an
+                // unfinished recognition checkpoint.
+                if (!revealed && canReveal) {
+                    e.preventDefault()
+                    setRevealed(true)
+                }
+                return
             }
 
             if (revealed) {
@@ -81,13 +120,20 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
-    }, [revealed, isPending, handleRate]) // Added dependencies
+    }, [revealed, canReveal, isPending, handleRate])
 
     return (
         <Card className="w-full shadow-lg border-border bg-card">
-            {/* Header ... (Same as before) ... */}
             <CardHeader>
-                <CardTitle>{problem.title}</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                    <CardTitle>{problem.title}</CardTitle>
+                    {hasPatterns && (
+                        <Badge variant="outline" className="font-normal">
+                            {problem.patterns!.length} pattern
+                            {problem.patterns!.length === 1 ? '' : 's'}
+                        </Badge>
+                    )}
+                </div>
                 <p className="text-muted-foreground">{problem.summary}</p>
             </CardHeader>
 
@@ -102,7 +148,123 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                     />
                 )}
 
-                {problem.hints && (
+                {/* Pattern Recognition Checkpoint */}
+                {hasPatterns && !revealed && (
+                    <div className="space-y-3 rounded-md border bg-muted/30 p-4">
+                        <div className="flex items-center gap-2">
+                            <Search className="h-4 w-4 text-primary" />
+                            <div>
+                                <p className="text-sm font-semibold">
+                                    Pattern check
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Name the pattern(s) you think apply before
+                                    revealing the answer.
+                                </p>
+                            </div>
+                        </div>
+
+                        {!patternChecked ? (
+                            <>
+                                <Input
+                                    value={patternGuess}
+                                    onChange={(e) =>
+                                        setPatternGuess(e.target.value)
+                                    }
+                                    maxLength={200}
+                                    placeholder="e.g. two pointers, sliding window"
+                                    className="h-11"
+                                />
+                                <div className="flex justify-end">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => setPatternChecked(true)}
+                                        disabled={
+                                            patternGuess.trim().length === 0
+                                        }
+                                        className="min-h-11"
+                                    >
+                                        Check my guess
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="space-y-1.5">
+                                    <p className="text-xs text-muted-foreground">
+                                        Actual pattern(s):
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {problem.patterns?.map((pattern) => (
+                                            <Badge
+                                                key={pattern}
+                                                variant="outline"
+                                            >
+                                                {pattern}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                    {patternGuess.trim() && (
+                                        <p className="truncate text-xs text-muted-foreground">
+                                            Your guess:{' '}
+                                            <span className="font-medium text-foreground">
+                                                {patternGuess.trim()}
+                                            </span>
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="space-y-1.5">
+                                    <p className="text-xs text-muted-foreground">
+                                        How close was your guess?
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <CheckpointButton
+                                            active={
+                                                patternRecognition ===
+                                                'recognized'
+                                            }
+                                            onClick={() =>
+                                                setPatternRecognition(
+                                                    'recognized',
+                                                )
+                                            }
+                                        >
+                                            Recognized
+                                        </CheckpointButton>
+                                        <CheckpointButton
+                                            active={
+                                                patternRecognition ===
+                                                'partial'
+                                            }
+                                            onClick={() =>
+                                                setPatternRecognition(
+                                                    'partial',
+                                                )
+                                            }
+                                        >
+                                            Close
+                                        </CheckpointButton>
+                                        <CheckpointButton
+                                            active={
+                                                patternRecognition === 'missed'
+                                            }
+                                            onClick={() =>
+                                                setPatternRecognition(
+                                                    'missed',
+                                                )
+                                            }
+                                        >
+                                            Missed
+                                        </CheckpointButton>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {problem.hints && (!hasPatterns || checkpointComplete) && (
                     <div className="space-y-3">
                         <div className="flex justify-end">
                             <Button
@@ -129,9 +291,22 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                 {/* Answer Section */}
                 <div className="flex-1 flex items-center justify-center relative">
                     {!revealed ? (
-                        <Button size="lg" onClick={() => setRevealed(true)}>
-                            <Eye className="w-4 h-4 mr-2" /> Reveal Answer
-                        </Button>
+                        <div className="flex flex-col items-center gap-2">
+                            <Button
+                                size="lg"
+                                onClick={() => setRevealed(true)}
+                                disabled={!canReveal}
+                                className="min-h-11"
+                            >
+                                <Eye className="w-4 h-4 mr-2" /> Reveal Answer
+                            </Button>
+                            {hasPatterns && !checkpointComplete && (
+                                <p className="text-xs text-muted-foreground">
+                                    Finish the pattern check above to reveal
+                                    the answer.
+                                </p>
+                            )}
+                        </div>
                     ) : (
                         <div className="w-full rounded-md border bg-card text-foreground p-4 max-h-[500px] overflow-y-auto">
                             {problem.answer_language ? (
@@ -243,6 +418,32 @@ export default function ReviewCard({ problem }: { problem: ReviewProblem }) {
                 )}
             </CardFooter>
         </Card>
+    )
+}
+
+function CheckpointButton({
+    active,
+    onClick,
+    children,
+}: {
+    active: boolean
+    onClick: () => void
+    children: React.ReactNode
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-pressed={active}
+            className={cn(
+                'min-h-11 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
+                active
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-muted-foreground hover:text-foreground',
+            )}
+        >
+            {children}
+        </button>
     )
 }
 

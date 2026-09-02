@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PatternCardPanel } from '@/features/pattern-card'
 
 import { useAddProblemToReviewQueue } from '../api/useAddProblemToReviewQueue'
 import { useDeleteProblem } from '../api/useDeleteProblem'
@@ -149,6 +150,8 @@ export function ProblemDetailView({ id }: ProblemDetailViewProps) {
                     </div>
                 </div>
             )}
+
+            <PatternCardPanel problemId={problem.id} />
         </div>
     )
 }
