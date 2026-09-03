@@ -5,6 +5,7 @@ import {
     ClipboardPenLine,
     GraduationCap,
     Inbox,
+    Network,
     Puzzle,
 } from 'lucide-react'
 
@@ -41,6 +42,11 @@ export const sidebarItems = [
         icon: BookOpen,
     },
     {
+        title: 'Patterns',
+        url: `${URL_PREFIX}/patterns`,
+        icon: Network,
+    },
+    {
         title: 'Extension',
         url: `${URL_PREFIX}/extension`,
         icon: Puzzle,
@@ -55,11 +61,13 @@ export const FeaturePagesHeaderInfo = {
     },
     edit_concepts: {
         title: 'Study Concepts',
-        description: 'Browse and study core algorithms and data structures concepts.'
+        description:
+            'Browse and study core algorithms and data structures concepts.',
     },
     dashboard: {
         title: 'Dashboard',
-        description: 'Track your learning progress, maintain your streak, and master algorithms one problem at a time',
+        description:
+            'Track your learning progress, maintain your streak, and master algorithms one problem at a time',
     },
     review: {
         title: 'Review',
@@ -68,6 +76,11 @@ export const FeaturePagesHeaderInfo = {
     library: {
         title: 'Library',
         description: 'Browse and manage all your tracked problems.',
+    },
+    patterns: {
+        title: 'Patterns',
+        description:
+            'Visualize the patterns you\u2019ve confirmed, track recognition mastery, and review by pattern.',
     },
     inbox: {
         title: 'Inbox',
@@ -79,4 +92,4 @@ export const FeaturePagesHeaderInfo = {
         description:
             'Pair your browser, manage connected installations, and quick-save solved LeetCode problems.',
     },
-} as const;
+} as const
