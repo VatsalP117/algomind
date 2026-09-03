@@ -20,7 +20,7 @@ type ReviewStateWithDifficulty struct {
 
 // ReviewRepository defines the seam for review state persistence.
 type ReviewRepository interface {
-	GetQueue(ctx context.Context, userID string) ([]dto.ReviewQueueItem, error)
+	GetQueue(ctx context.Context, userID string, patternID *int64) ([]dto.ReviewQueueItem, error)
 	GetState(ctx context.Context, userID, entityType, entityID string) (*ReviewStateWithDifficulty, error)
 	UpdateState(ctx context.Context, tx *sqlx.Tx, userID, entityType, entityID string, nextReviewAt time.Time, intervalDays int, easeFactor float64, streak int) error
 	ResetConceptForProblem(ctx context.Context, tx *sqlx.Tx, userID, problemID string) error
@@ -46,42 +46,102 @@ func NewPostgresReviewRepository(db *sqlx.DB) *PostgresReviewRepository {
 	return &PostgresReviewRepository{db: db}
 }
 
-func (r *PostgresReviewRepository) GetQueue(ctx context.Context, userID string) ([]dto.ReviewQueueItem, error) {
-	query := `
-		SELECT
-			rs.entity_type,
-			rs.entity_id,
-			rs.next_review_at,
-			p.title       AS problem_title,
-			p.difficulty  AS difficulty,
-			p.summary     AS summary,
-			p.description AS description,
-			p.answer      AS answer,
-			p.answer_language AS answer_language,
-			p.hints       AS hints,
-			con.title    AS concept_title,
-			con.content  AS content,
-			COALESCE((
-				SELECT json_agg(pat.name ORDER BY pp.position)
-				FROM problem_pattern_cards pc
-				JOIN problem_patterns pp ON pp.card_id = pc.id
-				JOIN patterns pat ON pat.id = pp.pattern_id
-				WHERE pc.problem_id = p.id
-			), '[]'::json) AS pattern_names
-		FROM review_states rs
-		LEFT JOIN problems p
-			ON rs.entity_type = 'problem'
-			AND rs.entity_id = p.id
-		LEFT JOIN concepts con
-			ON rs.entity_type = 'concept'
-			AND rs.entity_id = con.id
-		WHERE rs.user_id = $1
-			AND rs.next_review_at <= NOW()
-		ORDER BY rs.next_review_at ASC
-		LIMIT 50
-	`
-	var queue []dto.ReviewQueueItem
-	if err := r.db.SelectContext(ctx, &queue, query, userID); err != nil {
+// GetQueue returns the user's due review queue. When patternID is nil the
+// full queue (problems and concepts) is returned; otherwise only due
+// problem rows whose confirmed pattern card contains that pattern are
+// returned. Unknown/foreign pattern ids naturally produce an empty queue
+// thanks to every join being scoped to the authenticated user.
+func (r *PostgresReviewRepository) GetQueue(ctx context.Context, userID string, patternID *int64) ([]dto.ReviewQueueItem, error) {
+	var (
+		queue []dto.ReviewQueueItem
+		err   error
+	)
+	if patternID != nil {
+		query := `
+			SELECT
+				rs.entity_type,
+				rs.entity_id,
+				rs.next_review_at,
+				p.title       AS problem_title,
+				p.difficulty  AS difficulty,
+				p.summary     AS summary,
+				p.description AS description,
+				p.answer      AS answer,
+				p.answer_language AS answer_language,
+				p.hints       AS hints,
+				NULL          AS concept_title,
+				NULL          AS content,
+				COALESCE((
+					SELECT json_agg(pat.name ORDER BY pp2.position)
+					FROM problem_pattern_cards pc2
+					JOIN problem_patterns pp2 ON pp2.card_id = pc2.id
+					JOIN patterns pat ON pat.id = pp2.pattern_id
+					WHERE pc2.problem_id = p.id
+					  AND pc2.user_id = $1
+					  AND pc2.status = 'confirmed'
+				), '[]'::json) AS pattern_names
+			FROM review_states rs
+			JOIN problems p
+				ON rs.entity_type = 'problem'
+				AND rs.entity_id = p.id
+				AND p.user_id = $1
+			JOIN problem_pattern_cards pc
+				ON pc.problem_id = p.id
+			   AND pc.user_id = $1
+			   AND pc.status = 'confirmed'
+			JOIN problem_patterns pp
+				ON pp.card_id = pc.id
+			   AND pp.pattern_id = $2
+			JOIN patterns filtered_pattern
+				ON filtered_pattern.id = pp.pattern_id
+			   AND filtered_pattern.user_id = $1
+			WHERE rs.user_id = $1
+				AND rs.entity_type = 'problem'
+				AND rs.next_review_at <= NOW()
+			ORDER BY rs.next_review_at ASC
+			LIMIT 50
+		`
+		err = r.db.SelectContext(ctx, &queue, query, userID, *patternID)
+	} else {
+		query := `
+			SELECT
+				rs.entity_type,
+				rs.entity_id,
+				rs.next_review_at,
+				p.title       AS problem_title,
+				p.difficulty  AS difficulty,
+				p.summary     AS summary,
+				p.description AS description,
+				p.answer      AS answer,
+				p.answer_language AS answer_language,
+				p.hints       AS hints,
+				con.title    AS concept_title,
+				con.content  AS content,
+				COALESCE((
+					SELECT json_agg(pat.name ORDER BY pp.position)
+					FROM problem_pattern_cards pc
+					JOIN problem_patterns pp ON pp.card_id = pc.id
+					JOIN patterns pat ON pat.id = pp.pattern_id
+					WHERE pc.problem_id = p.id
+					  AND pc.user_id = $1
+					  AND pc.status = 'confirmed'
+				), '[]'::json) AS pattern_names
+			FROM review_states rs
+			LEFT JOIN problems p
+				ON rs.entity_type = 'problem'
+				AND rs.entity_id = p.id
+				AND p.user_id = $1
+			LEFT JOIN concepts con
+				ON rs.entity_type = 'concept'
+				AND rs.entity_id = con.id
+			WHERE rs.user_id = $1
+				AND rs.next_review_at <= NOW()
+			ORDER BY rs.next_review_at ASC
+			LIMIT 50
+		`
+		err = r.db.SelectContext(ctx, &queue, query, userID)
+	}
+	if err != nil {
 		return nil, err
 	}
 	if queue == nil {

@@ -82,6 +82,31 @@ func (s *Service) GetPatternCard(ctx context.Context, userID string, problemID i
 	return s.buildResponse(ctx, userID, problemID)
 }
 
+// GetInsights builds the pattern-intelligence response for the user's
+// confirmed patterns: per-pattern aggregates (with derived mastery,
+// label and weak insight) plus co-occurrence edges. The repository only
+// returns confirmed cards scoped to the user; empty result sets are
+// serialized as [] rather than null.
+func (s *Service) GetInsights(ctx context.Context, userID string) (*dto.PatternInsightsResponse, error) {
+	rows, edges, err := s.repo.GetInsights(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	patterns := make([]dto.PatternInsight, 0, len(rows))
+	for _, row := range rows {
+		patterns = append(patterns, BuildPatternInsight(row))
+	}
+	if edges == nil {
+		edges = []dto.PatternEdge{}
+	}
+
+	return &dto.PatternInsightsResponse{
+		Patterns: patterns,
+		Edges:    edges,
+	}, nil
+}
+
 // GeneratePatternCard synchronously calls the LLM, persists/replaces a
 // draft card transactionally, and returns the resulting card.
 func (s *Service) GeneratePatternCard(ctx context.Context, userID string, problemID int64) (*dto.PatternCardResponse, error) {

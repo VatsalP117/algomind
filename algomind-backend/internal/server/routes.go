@@ -48,6 +48,7 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 	extensionHandler := handlers.NewExtensionHandler(extensionService)
 	problemCaptureHandler := handlers.NewProblemCaptureHandler(captureRepo, leetcodeClient, problemService)
 	patternCardHandler := handlers.NewPatternCardHandler(patternService)
+	patternInsightsHandler := handlers.NewPatternInsightsHandler(patternService)
 
 	api := e.Group("/api/v1")
 
@@ -101,6 +102,8 @@ func RegisterRoutes(e *echo.Echo, db *database.Service, cfg *config.Config) {
 
 	appAPI.GET("/reviews/queue", reviewHandler.GetQueue)
 	appAPI.POST("/reviews/:entity_type/:entity_id/log", reviewHandler.LogReview)
+
+	appAPI.GET("/patterns/insights", patternInsightsHandler.GetInsights)
 
 	appAPI.GET("/leetcode/fetch", leetcodeHandler.FetchProblem)
 	appAPI.GET("/leetcode/fetch/direct", leetcodeHandler.FetchProblemDirectLeetCode)

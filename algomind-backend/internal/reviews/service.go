@@ -47,9 +47,11 @@ func NewService(
 	}
 }
 
-// GetQueue returns the user's review queue.
-func (s *Service) GetQueue(ctx context.Context, userID string) ([]dto.ReviewQueueItem, error) {
-	return s.reviewRepo.GetQueue(ctx, userID)
+// GetQueue returns the user's review queue. A non-nil patternID restricts
+// the queue to due problem rows on a confirmed card containing that
+// pattern (no concept rows). A nil patternID keeps the existing behavior.
+func (s *Service) GetQueue(ctx context.Context, userID string, patternID *int64) ([]dto.ReviewQueueItem, error) {
+	return s.reviewRepo.GetQueue(ctx, userID, patternID)
 }
 
 // LogReview logs a review, updates SRS state, and handles cascading resets.

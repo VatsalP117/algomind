@@ -46,6 +46,7 @@ type PatternRepository interface {
 	GetCardByProblem(ctx context.Context, userID string, problemID int64) (*models.ProblemPatternCard, error)
 	GetPatternsForCard(ctx context.Context, cardID int64) ([]models.ProblemPattern, error)
 	GetRelatedProblems(ctx context.Context, userID string, sourceCardID, problemID int64) ([]dto.RelatedProblem, error)
+	GetInsights(ctx context.Context, userID string) ([]dto.PatternInsightRow, []dto.PatternEdge, error)
 	UpsertCardWithinTx(ctx context.Context, tx *sqlx.Tx, userID string, problemID int64, input UpsertCardInput) (int64, error)
 	ReplacePatternsWithinTx(ctx context.Context, tx *sqlx.Tx, userID string, cardID int64, drafts []PatternDraft) error
 }
@@ -155,13 +156,22 @@ func (r *PostgresPatternRepository) GetRelatedProblems(ctx context.Context, user
 		FROM problem_pattern_cards shared_card
 		JOIN problems p ON p.id = shared_card.problem_id
 		JOIN problem_patterns pp ON pp.card_id = shared_card.id
-		JOIN patterns pat ON pat.id = pp.pattern_id
+		JOIN patterns pat
+		  ON pat.id = pp.pattern_id
+		 AND pat.user_id = $1
 		WHERE shared_card.user_id = $1
+		  AND shared_card.status = 'confirmed'
 		  AND shared_card.problem_id <> $2
 		  AND EXISTS (
 			  SELECT 1
-			  FROM problem_patterns src_pp
-			  WHERE src_pp.card_id = $3
+			  FROM problem_pattern_cards source_card
+			  JOIN problem_patterns src_pp ON src_pp.card_id = source_card.id
+			  JOIN patterns source_pattern
+			    ON source_pattern.id = src_pp.pattern_id
+			   AND source_pattern.user_id = $1
+			  WHERE source_card.id = $3
+			    AND source_card.user_id = $1
+			    AND source_card.status = 'confirmed'
 			    AND src_pp.pattern_id = pp.pattern_id
 		  )
 		GROUP BY p.id, p.title, p.difficulty
@@ -176,6 +186,86 @@ func (r *PostgresPatternRepository) GetRelatedProblems(ctx context.Context, user
 		problems = []dto.RelatedProblem{}
 	}
 	return problems, nil
+}
+
+// GetInsights returns the per-pattern aggregates and co-occurrence edges
+// for the user's confirmed pattern cards. Every join is scoped to the
+// authenticated user and to confirmed cards, so draft/foreign data never
+// leaks into mastery. Each problem review is attributed to every pattern
+// currently confirmed on that problem.
+func (r *PostgresPatternRepository) GetInsights(ctx context.Context, userID string) ([]dto.PatternInsightRow, []dto.PatternEdge, error) {
+	rowsQuery := `
+		SELECT
+			pat.id                          AS pattern_id,
+			pat.name                        AS name,
+			COUNT(DISTINCT pc.problem_id)   AS confirmed_count,
+			COUNT(DISTINCT pc.problem_id) FILTER (
+				WHERE rs.next_review_at IS NOT NULL
+				  AND rs.next_review_at <= NOW()
+			)                               AS due_count,
+			COUNT(rl.id) FILTER (WHERE rl.pattern_recognition = 'recognized') AS recognized_count,
+			COUNT(rl.id) FILTER (WHERE rl.pattern_recognition = 'partial')    AS partial_count,
+			COUNT(rl.id) FILTER (WHERE rl.pattern_recognition = 'missed')     AS missed_count,
+			COUNT(rl.id) FILTER (WHERE rl.pattern_recognition IS NOT NULL)    AS attempts
+		FROM patterns pat
+		JOIN problem_patterns pp ON pp.pattern_id = pat.id
+		JOIN problem_pattern_cards pc
+			ON pc.id = pp.card_id
+		   AND pc.user_id = $1
+		   AND pc.status = 'confirmed'
+		LEFT JOIN review_states rs
+			ON rs.user_id = $1
+		   AND rs.entity_type = 'problem'
+		   AND rs.entity_id = pc.problem_id
+		LEFT JOIN review_logs rl
+			ON rl.user_id = $1
+		   AND rl.entity_type = 'problem'
+		   AND rl.entity_id = pc.problem_id
+		WHERE pat.user_id = $1
+		GROUP BY pat.id, pat.name
+		ORDER BY confirmed_count DESC, pat.name ASC
+	`
+	var rows []dto.PatternInsightRow
+	if err := r.db.SelectContext(ctx, &rows, rowsQuery, userID); err != nil {
+		return nil, nil, err
+	}
+
+	edgesQuery := `
+		SELECT
+			a.pattern_id                  AS source_pattern_id,
+			b.pattern_id                  AS target_pattern_id,
+			COUNT(DISTINCT pc.problem_id) AS shared_problem_count
+		FROM problem_patterns a
+		JOIN problem_pattern_cards pc
+			ON pc.id = a.card_id
+		   AND pc.user_id = $1
+		   AND pc.status = 'confirmed'
+		JOIN patterns source_pattern
+			ON source_pattern.id = a.pattern_id
+		   AND source_pattern.user_id = $1
+		JOIN problem_patterns b
+			ON b.card_id = pc.id
+		   AND b.pattern_id > a.pattern_id
+		JOIN patterns target_pattern
+			ON target_pattern.id = b.pattern_id
+		   AND target_pattern.user_id = $1
+		GROUP BY a.pattern_id, b.pattern_id
+		HAVING COUNT(DISTINCT pc.problem_id) > 0
+		ORDER BY a.pattern_id ASC, b.pattern_id ASC
+	`
+	var edges []dto.PatternEdge
+	if err := r.db.SelectContext(ctx, &edges, edgesQuery, userID); err != nil {
+		return nil, nil, err
+	}
+
+	// Guarantee list shape: empty results must serialize as [], not null.
+	if rows == nil {
+		rows = []dto.PatternInsightRow{}
+	}
+	if edges == nil {
+		edges = []dto.PatternEdge{}
+	}
+	return rows, edges, nil
 }
 
 func (r *PostgresPatternRepository) UpsertCardWithinTx(ctx context.Context, tx *sqlx.Tx, userID string, problemID int64, input UpsertCardInput) (int64, error) {

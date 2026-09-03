@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/VatsalP117/algomind/algomind-backend/internal/observability"
 	"github.com/VatsalP117/algomind/algomind-backend/internal/reviews"
@@ -29,7 +30,12 @@ func (h *ReviewHandler) GetQueue(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	ctx := c.Request().Context()
 
-	queue, err := h.reviewService.GetQueue(ctx, userID)
+	patternID, err := parseOptionalPatternID(c)
+	if err != nil {
+		return err
+	}
+
+	queue, err := h.reviewService.GetQueue(ctx, userID, patternID)
 	if err != nil {
 		return observability.HTTPError(
 			http.StatusInternalServerError,
@@ -39,6 +45,22 @@ func (h *ReviewHandler) GetQueue(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, queue)
+}
+
+// parseOptionalPatternID reads the optional pattern_id query parameter.
+// Absent or empty means no filter (existing behavior); a non-positive or
+// malformed value is a 400 so callers cannot silently fall back to the
+// full queue.
+func parseOptionalPatternID(c echo.Context) (*int64, error) {
+	raw := c.QueryParam("pattern_id")
+	if raw == "" {
+		return nil, nil
+	}
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || id <= 0 {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "invalid pattern_id")
+	}
+	return &id, nil
 }
 
 func (h *ReviewHandler) LogReview(c echo.Context) error {
